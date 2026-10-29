@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -10,6 +11,26 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileStats();
+  }
+
+  Future<void> _loadProfileStats() async {
+    if (ApiService.currentUser == null) return;
+    final res = await ApiService.getProfile();
+    if (mounted) {
+      setState(() {
+        if (res['success'] == true) {
+          _stats = res['stats'];
+        }
+      });
+    }
+  }
+
   // Contact WhatsApp launcher helper
   Future<void> _openWhatsAppSupport() async {
     final uri = Uri.parse('https://wa.me/6282283217789?text=Halo%20Admin%20KosinAja%2C%20saya%20butuh%20bantuan%20terkait%20akun%20mahasiswa%20saya.');
@@ -523,6 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 46,
                         child: ElevatedButton(
                           onPressed: () {
+                            ApiService.logout();
                             Navigator.pop(context);
                             Navigator.pushNamedAndRemoveUntil(
                               context,
@@ -753,9 +775,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 14),
 
                         // User Name
-                        const Text(
-                          'Vania Ulimaz Rivani',
-                          style: TextStyle(
+                        Text(
+                          ApiService.currentUser?.nama ?? 'Vania Ulimaz Rivani',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: AppColors.text,
@@ -773,18 +795,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: const Color(0xFFC8E6D2)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.verified_user,
                                 color: Color(0xFF2E7D52),
                                 size: 15,
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Text(
-                                'Mahasiswa UNP Terverifikasi',
-                                style: TextStyle(
+                                ApiService.currentUser?.alamat?.isNotEmpty == true
+                                    ? ApiService.currentUser!.alamat!
+                                    : 'Mahasiswa UNP Terverifikasi',
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF2E7D52),
@@ -806,19 +830,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   children: [
                                     Text(
-                                      '1 Box',
-                                      style: TextStyle(
+                                      '${_stats?['activeBookings'] ?? 1} Box',
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
                                         color: AppColors.primary,
                                       ),
                                     ),
-                                    SizedBox(height: 2),
-                                    Text(
+                                    const SizedBox(height: 2),
+                                    const Text(
                                       'Penitipan Aktif',
                                       style: TextStyle(
                                         fontSize: 12,
@@ -833,19 +857,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 1,
                                 color: AppColors.border,
                               ),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   children: [
                                     Text(
-                                      '3 Kali',
-                                      style: TextStyle(
+                                      '${_stats?['completedBookings'] ?? 3} Kali',
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
                                         color: AppColors.secondary,
                                       ),
                                     ),
-                                    SizedBox(height: 2),
-                                    Text(
+                                    const SizedBox(height: 2),
+                                    const Text(
                                       'Selesai Dititip',
                                       style: TextStyle(
                                         fontSize: 12,
@@ -927,7 +951,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconBg: const Color(0xFF25D366).withOpacity(0.15),
                       iconColor: const Color(0xFF25D366),
                       label: 'Nomor WhatsApp',
-                      value: '0822-8321-xxxx',
+                      value: ApiService.currentUser?.noWa.isNotEmpty == true
+                          ? ApiService.currentUser!.noWa
+                          : '0822-8321-xxxx',
                       trailing: const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
                     ),
 
@@ -938,8 +964,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.school,
                       iconBg: AppColors.primaryFixed,
                       iconColor: AppColors.primary,
-                      label: 'Email Kampus SSO',
-                      value: 'vania@student.unp.ac.id',
+                      label: 'Email Terdaftar',
+                      value: ApiService.currentUser?.email.isNotEmpty == true
+                          ? ApiService.currentUser!.email
+                          : 'vania@student.unp.ac.id',
                       trailing: const Icon(Icons.check_circle, size: 16, color: Color(0xFF2E7D52)),
                     ),
 
@@ -950,8 +978,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.account_balance,
                       iconBg: AppColors.secondaryContainer,
                       iconColor: AppColors.secondary,
-                      label: 'Kampus Utama',
-                      value: 'Universitas Negeri Padang (UNP)',
+                      label: 'Kampus / Domisili',
+                      value: ApiService.currentUser?.alamat?.isNotEmpty == true
+                          ? ApiService.currentUser!.alamat!
+                          : 'Universitas Negeri Padang (UNP)',
                     ),
 
                     const SizedBox(height: 10),
