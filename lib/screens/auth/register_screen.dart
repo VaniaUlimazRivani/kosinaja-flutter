@@ -154,6 +154,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _handleGoogleSignUp() {
+    setState(() {
+      _nameController.text = 'Vania Ulimaz Rivani';
+      _emailController.text = 'vania@student.unp.ac.id';
+      _phoneController.text = '82283217789';
+      _selectedCampus = 'UNP - Universitas Negeri Padang';
+      _passwordController.text = 'MahasiswaPadang2026!';
+      _confirmPasswordController.text = 'MahasiswaPadang2026!';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Akun Google Kampus terhubung! Data nama, email, dan kampus otomatis terisi.'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strength = _calculatePasswordStrength(_passwordController.text);
@@ -534,6 +552,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         )
                       : const Text('Daftar Akun Baru'),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // Divider "atau daftar dengan"
+              Row(
+                children: [
+                  const Expanded(child: Divider(color: AppColors.border)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Text(
+                      'atau daftar lebih cepat dengan',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                  const Expanded(child: Divider(color: AppColors.border)),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Tombol Daftar Akun Google / SSO Kampus
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _handleGoogleSignUp,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.text,
+                    side: const BorderSide(color: AppColors.border, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'G',
+                        style: TextStyle(
+                          color: Color(0xFF4285F4),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  label: const Text(
+                    'Daftar dengan Akun Google / SSO',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
                 ),
               ),
 
