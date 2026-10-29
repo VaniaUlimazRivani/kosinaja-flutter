@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 
 class OrderHistoryItem {
@@ -34,8 +36,10 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   String _activeTab = 'active'; // 'active' or 'completed'
+  bool _isLoading = false;
+  List<OrderHistoryItem> _orders = [];
 
-  final List<OrderHistoryItem> _allOrders = const [
+  static const List<OrderHistoryItem> _defaultOrders = [
     OrderHistoryItem(
       orderCode: 'STC-1310-367',
       date: '10 Nov 2026',
@@ -73,6 +77,72 @@ class _OrdersScreenState extends State<OrdersScreen> {
           'https://lh3.googleusercontent.com/aida-public/AB6AXuAQFzpIJYRUZ5HEequecDrADWd2Io1hfKHWFIMt_YNI4qJ9M1F4xpONIjBpQsB-BF1Whlk2x-n7PGMtGWLg-6xT1_F0tw6G47Wv1VyIgSEDyGpvPB0mYZRrCTx3Icbfa8B5KULpTABw2YPe-vxtnh6fmPPaIvS-k03GN4wEQJJrZjMNlylBmuXJunhz4UsBz7Bk6zWL_KKADPClZY2LU4e1UKCd288TljSAPlQAIPIedXsIUh0rRD6m',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _orders = List.from(_defaultOrders);
+    _fetchOrders();
+  }
+
+  Future<void> _fetchOrders() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await ApiService.getBookings(userId: ApiService.currentUser?.id);
+      if (mounted) {
+        if (res['success'] == true && res['bookings'] is List) {
+          final List list = res['bookings'];
+          if (list.isNotEmpty) {
+            final mapped = list.map((b) {
+              final status = b['status'] ?? 'LEAD';
+              final isDone = status == 'COMPLETED' || status == 'CLOSED';
+
+              String statusLabel = 'Menunggu Konfirmasi';
+              if (status == 'APPROVED') statusLabel = 'Disetujui Admin';
+              if (status == 'PICKUP_SCHEDULED') statusLabel = 'Jadwal Penjemputan';
+              if (status == 'IN_STORAGE') statusLabel = 'Di Gudang Pauh';
+              if (status == 'DELIVERY_SCHEDULED') statusLabel = 'Jadwal Pengantaran';
+              if (status == 'COMPLETED') statusLabel = 'Selesai Dikembalikan';
+
+              String itemsTitle = 'Barang Titipan';
+              if (b['items'] is List && (b['items'] as List).isNotEmpty) {
+                itemsTitle = (b['items'] as List)
+                    .map((it) => '${it['jumlah'] ?? 1}x ${it['namaBarang'] ?? it['nama'] ?? 'Barang'}')
+                    .join(', ');
+              }
+
+              final createdAt = b['createdAt'] != null
+                  ? DateFormat('d MMM yyyy', 'id_ID')
+                      .format(DateTime.tryParse(b['createdAt']) ?? DateTime.now())
+                  : 'Baru saja';
+
+              final priceFmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+                  .format(b['totalHarga'] ?? 0);
+
+              return OrderHistoryItem(
+                orderCode: b['kodeBooking'] ?? 'STC-0000',
+                date: createdAt,
+                status: statusLabel,
+                statusType: isDone ? 'completed' : 'active',
+                title: itemsTitle,
+                subtitle: 'Kategori ${b['kategori'] ?? 'A'} • ${b['lokasiPickup'] ?? 'Kota Padang'}',
+                schedule: '${b['durasiBulan'] ?? 1} Bulan',
+                price: priceFmt,
+                imageUrl: _defaultOrders.first.imageUrl,
+              );
+            }).toList();
+
+            setState(() {
+              _orders = mapped;
+            });
+          }
+        }
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   void _showCompletedEvidenceModal(OrderHistoryItem item) {
     showDialog(
@@ -146,8 +216,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeOrders = _allOrders.where((o) => o.statusType == 'active').toList();
-    final completedOrders = _allOrders.where((o) => o.statusType == 'completed').toList();
+    final activeOrders = _orders.where((o) => o.statusType == 'active').toList();
+    final completedOrders = _orders.where((o) => o.statusType == 'completed').toList();
     final displayedOrders = _activeTab == 'active' ? activeOrders : completedOrders;
 
     return Scaffold(
@@ -201,8 +271,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: RefreshIndicator(
+          onRefresh: _fetchOrders,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -643,6 +717,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
       ),
+    ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 2, // Riwayat tab
         onTap: (index) {

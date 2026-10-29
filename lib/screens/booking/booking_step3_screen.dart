@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
 
@@ -17,7 +18,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
   String _selectedPayment = 'QRIS';
   bool _isProcessing = false;
 
-  final String generatedOrderCode = 'STC-1310-367';
+  String _orderCode = 'STC-1310-367';
 
   @override
   void initState() {
@@ -86,7 +87,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
                           Text(
-                            generatedOrderCode,
+                            _orderCode,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -154,19 +155,68 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
     );
   }
 
-  void _handlePay() {
+  Future<void> _handlePay() async {
     setState(() {
       _isProcessing = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-        _showSuccessModal();
-      }
+    final activeItems = _booking.items
+        .where((i) => i.quantity > 0)
+        .map((i) => {
+              'nama': i.name,
+              'jumlah': i.quantity,
+            })
+        .toList();
+
+    final user = ApiService.currentUser;
+    final payload = {
+      if (user != null && user.id.isNotEmpty) 'userId': user.id,
+      'nama': user?.nama ?? 'Mahasiswa KosinAja',
+      'noWa': (user != null && user.noWa.isNotEmpty) ? user.noWa : '081234567890',
+      'alamat': _booking.kosAddress,
+      'lokasiPickup': _booking.kosAddress,
+      'tanggalPickup': _booking.pickupDate.toIso8601String(),
+      'items': activeItems.isNotEmpty
+          ? activeItems
+          : [
+              {'nama': 'Dus Perlengkapan Kos', 'jumlah': 1}
+            ],
+      'durasiBulan': _booking.durationCount,
+      'tipeDurasi': _booking.durationType == 'Bulanan'
+          ? 'BULAN'
+          : (_booking.durationType == 'Mingguan' ? 'MINGGU' : 'HARI'),
+      'durasiNilai': _booking.durationCount,
+      'metodePickup': 'PICKUP',
+      'metodeDelivery': 'DELIVERY',
+      'latitude': -0.9294,
+      'longitude': 100.3632,
+    };
+
+    final result = await ApiService.createBooking(payload);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isProcessing = false;
     });
+
+    if (result['success'] == true) {
+      final bookingData = result['booking'];
+      if (bookingData != null && bookingData['kodeBooking'] != null) {
+        setState(() {
+          _orderCode = bookingData['kodeBooking'];
+        });
+      }
+      _showSuccessModal();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Gagal membuat booking penitipan.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
