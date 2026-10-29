@@ -12,6 +12,7 @@ import 'screens/tracking/tracking_screen.dart';
 import 'screens/orders/orders_screen.dart';
 import 'screens/help/help_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 
 void main() {
   runApp(const KosinAjaApp());
@@ -37,6 +38,7 @@ class KosinAjaApp extends StatelessWidget {
         '/orders': (context) => const OrdersScreen(),
         '/help': (context) => const HelpScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/notifications': (context) => const NotificationsScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/booking-step2') {

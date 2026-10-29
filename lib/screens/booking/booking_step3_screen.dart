@@ -76,20 +76,42 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                     color: AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
                     children: [
-                      const Text(
-                        'Nomor Resi:',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Nomor Resi:',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            generatedOrderCode,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        generatedOrderCode,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
+                      const Divider(height: 12),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Payment Gateway:',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            'Xendit Verified (LUNAS)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E7D52),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -385,8 +407,8 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                     // 1. QRIS
                     _buildPaymentOption(
                       id: 'QRIS',
-                      title: 'QRIS Instant (Semua Bank / e-Wallet)',
-                      subtitle: 'BSI Mobile, Mandiri Livin\', BCA, GoPay, OVO',
+                      title: 'QRIS Instant (Xendit Gateway)',
+                      subtitle: 'BSI, Bank Nagari, Mandiri, BCA, GoPay, OVO • Verifikasi Otomatis',
                       icon: Icons.qr_code_2,
                       isRecommended: true,
                     ),
@@ -396,8 +418,8 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                     // 2. Virtual Account
                     _buildPaymentOption(
                       id: 'VA',
-                      title: 'Virtual Account Bank',
-                      subtitle: 'BSI, Bank Nagari, Mandiri, BRI, BCA',
+                      title: 'Virtual Account Bank (Xendit)',
+                      subtitle: 'Bank Nagari, Mandiri, BRI, BCA, BNI',
                       icon: Icons.account_balance_outlined,
                       isRecommended: false,
                     ),

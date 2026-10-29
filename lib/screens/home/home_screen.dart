@@ -70,12 +70,48 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
+                      // Notification Bell with Unread Badge
+                      Stack(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/notifications');
+                            },
+                            icon: const Icon(Icons.notifications_outlined, color: AppColors.text, size: 24),
+                            tooltip: 'Notifikasi & Status',
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: const Text(
+                                '3',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       IconButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(context, '/help');
                         },
-                        icon: const Icon(Icons.logout_outlined, color: AppColors.textSecondary),
-                        tooltip: 'Keluar',
+                        icon: const Icon(Icons.support_agent, color: AppColors.textSecondary),
+                        tooltip: 'Pusat Bantuan',
                       ),
                     ],
                   ),
@@ -175,7 +211,64 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
+
+              // Live Real-time Status Alert Banner (Interactive)
+              InkWell(
+                onTap: () {
+                  Navigator.pushNamed(context, '/notifications');
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF5EE),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFC8E6D2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2E7D52),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.bolt, size: 14, color: Colors.white),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Notifikasi Terkini • Driver Menuju Kos',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2E7D52),
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Ahmad Dani dalam perjalanan (Slot Siang). Tap untuk lacak...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.text,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF2E7D52)),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               // Active Storage Card Section
               Row(
