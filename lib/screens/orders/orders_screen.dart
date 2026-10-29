@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import 'order_detail_screen.dart';
 
 class OrderHistoryItem {
   final String orderCode;
@@ -609,7 +610,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             if (isActive)
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pushNamed(context, '/tracking');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OrderDetailScreen(
+                                        orderCode: order.orderCode,
+                                        currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
+                                        rawData: {
+                                          'title': order.title,
+                                          'subtitle': order.subtitle,
+                                          'schedule': order.schedule,
+                                        },
+                                      ),
+                                    ),
+                                  );
                                 },
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
