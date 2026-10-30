@@ -169,14 +169,27 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
             })
         .toList();
 
+    final fullAddress = _booking.kosNote.trim().isNotEmpty
+        ? '${_booking.kosAddress} (Patokan: ${_booking.kosNote.trim()})'
+        : _booking.kosAddress;
+
+    DateTime scheduleDate = _booking.pickupDate;
+    if (_booking.pickupSession.startsWith('Pagi')) {
+      scheduleDate = DateTime(scheduleDate.year, scheduleDate.month, scheduleDate.day, 9, 0);
+    } else if (_booking.pickupSession.startsWith('Siang')) {
+      scheduleDate = DateTime(scheduleDate.year, scheduleDate.month, scheduleDate.day, 14, 0);
+    } else if (_booking.pickupSession.startsWith('Sore')) {
+      scheduleDate = DateTime(scheduleDate.year, scheduleDate.month, scheduleDate.day, 16, 30);
+    }
+
     final user = ApiService.currentUser;
     final payload = {
       if (user != null && user.id.isNotEmpty) 'userId': user.id,
       'nama': user?.nama ?? 'Pelanggan KosinAja',
       'noWa': (user != null && user.noWa.isNotEmpty) ? user.noWa : '081234567890',
-      'alamat': _booking.kosAddress,
-      'lokasiPickup': _booking.kosAddress,
-      'tanggalPickup': _booking.pickupDate.toIso8601String(),
+      'alamat': fullAddress,
+      'lokasiPickup': fullAddress,
+      'tanggalPickup': scheduleDate.toIso8601String(),
       'items': activeItems.isNotEmpty
           ? activeItems
           : [
