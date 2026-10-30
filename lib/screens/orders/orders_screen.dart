@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../widgets/xendit_payment_modal.dart';
 
 class OrderHistoryItem {
+  final String? bookingId;
   final String orderCode;
   final String date;
   final String status;
   final String statusType; // 'active', 'completed'
+  final String paymentStatus; // 'UNPAID', 'PENDING', 'PAID', etc.
   final String title;
   final String subtitle;
   final String schedule;
@@ -15,10 +19,12 @@ class OrderHistoryItem {
   final String imageUrl;
 
   const OrderHistoryItem({
+    this.bookingId,
     required this.orderCode,
     required this.date,
     required this.status,
     required this.statusType,
+    this.paymentStatus = 'UNPAID',
     required this.title,
     required this.subtitle,
     required this.schedule,
@@ -120,10 +126,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   .format(b['totalHarga'] ?? 0);
 
               return OrderHistoryItem(
+                bookingId: b['id']?.toString(),
                 orderCode: b['kodeBooking'] ?? 'STC-0000',
                 date: createdAt,
                 status: statusLabel,
                 statusType: isDone ? 'completed' : 'active',
+                paymentStatus: (b['paymentStatus'] ?? 'UNPAID').toString().toUpperCase(),
                 title: itemsTitle,
                 subtitle: 'Kategori ${b['kategori'] ?? 'A'} • ${b['lokasiPickup'] ?? 'Kota Padang'}',
                 schedule: '${b['durasiBulan'] ?? 1} Bulan',
@@ -141,6 +149,62 @@ class _OrdersScreenState extends State<OrdersScreen> {
     } catch (_) {}
     if (mounted) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  /// Membuka pop-up pembayaran Xendit in-app dan memfasilitasi refresh otomatis
+  Future<void> _payBookingWithXendit(OrderHistoryItem order) async {
+    if (order.bookingId == null || order.bookingId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID pesanan tidak valid untuk pembayaran.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            SizedBox(width: 12),
+            Text('Menyiapkan pop-up pembayaran Xendit...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    final res = await ApiService.createXenditInvoice(order.bookingId!);
+    if (!mounted) return;
+
+    if (res['success'] == true) {
+      final invoiceUrl = res['invoiceUrl'] as String?;
+      if (invoiceUrl != null && invoiceUrl.isNotEmpty) {
+        final rawPrice = int.tryParse(order.price.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+        await XenditPaymentModal.show(
+          context: context,
+          bookingId: order.bookingId!,
+          kodeBooking: order.orderCode,
+          invoiceUrl: invoiceUrl,
+          totalHarga: rawPrice,
+        );
+
+        if (mounted) {
+          _fetchOrders(); // Refresh status pesanan otomatis setelah modal ditutup
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['error'] ?? 'Gagal membuat invoice pembayaran Xendit'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -438,36 +502,36 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       children: [
                         // Card Top Row
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  isActive ? Icons.inventory_2 : Icons.archive_outlined,
-                                  color: isActive ? AppColors.primary : AppColors.secondary,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  order.orderCode,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text('•', style: TextStyle(color: AppColors.outlineVariant)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  order.date,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
+                            Icon(
+                              isActive ? Icons.inventory_2 : Icons.archive_outlined,
+                              color: isActive ? AppColors.primary : AppColors.secondary,
+                              size: 16,
                             ),
+                            const SizedBox(width: 6),
+                            Text(
+                              order.orderCode,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text('•', style: TextStyle(color: AppColors.outlineVariant, fontSize: 11)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                order.date,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
@@ -477,6 +541,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (isActive) ...[
                                     Container(
@@ -585,44 +650,111 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isActive ? 'Total Biaya Titip' : 'Total Terbayar',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 4,
+                                    runSpacing: 2,
+                                    children: [
+                                      Text(
+                                        isActive ? 'Total Biaya Titip' : 'Total Terbayar',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      if (order.paymentStatus == 'PAID')
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.successSoft,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Text(
+                                            'Lunas',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppColors.success,
+                                            ),
+                                          ),
+                                        )
+                                      else if (order.bookingId != null && isActive)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFF3CD),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: const Color(0xFFFFEEBA)),
+                                          ),
+                                          child: const Text(
+                                            'Belum Lunas',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF856404),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ),
-                                Text(
-                                  order.price,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: isActive ? AppColors.primary : AppColors.text,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    order.price,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: isActive ? AppColors.primary : AppColors.text,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             if (isActive)
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/tracking');
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Text('Lihat Detail & Lacak', style: TextStyle(fontSize: 12)),
-                                    SizedBox(width: 4),
-                                    Icon(Icons.arrow_forward, size: 14),
+                              Row(
+                                children: [
+                                  if (order.bookingId != null && order.paymentStatus != 'PAID') ...[
+                                    OutlinedButton.icon(
+                                      onPressed: () => _payBookingWithXendit(order),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF0052CC),
+                                        side: const BorderSide(color: Color(0xFF0052CC)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.payment, size: 14),
+                                      label: const Text(
+                                        'Bayar Xendit',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
                                   ],
-                                ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/tracking');
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Text('Lacak', style: TextStyle(fontSize: 12)),
+                                        SizedBox(width: 4),
+                                        Icon(Icons.arrow_forward, size: 14),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               )
                             else
                               OutlinedButton.icon(
