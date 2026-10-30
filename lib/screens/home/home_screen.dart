@@ -19,63 +19,74 @@ class HomeScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(context, '/profile');
-                        },
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary, width: 2),
-                            image: const DecorationImage(
-                              image: NetworkImage(
-                                'https://lh3.googleusercontent.com/aida-public/AB6AXuAhIoVq87JiKYyuMP0kZoIj1zQ9JYB_B0a4v9L469yQKcYFAF14Gt99EFH0h7LAURiA3J3qfJXL_HZ5XRJm7_P5FnPjflBwHygVYwuDnpS6f1R8y7lC5U30xVZrK39DPXoU4I-kHu8bjNBoABnPHKJ5JSHGBlmNmfIoGksxbB1jR2QvkdhEV5GcvD45lMg6d8ZE9lX8xNyozIeMV1ityAyJnWoJo7RAo3cdUfhVBdTs5FGs_EIDcd8z',
+                  Expanded(
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/profile');
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary, width: 2),
+                              image: const DecorationImage(
+                                image: NetworkImage(
+                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuAhIoVq87JiKYyuMP0kZoIj1zQ9JYB_B0a4v9L469yQKcYFAF14Gt99EFH0h7LAURiA3J3qfJXL_HZ5XRJm7_P5FnPjflBwHygVYwuDnpS6f1R8y7lC5U30xVZrK39DPXoU4I-kHu8bjNBoABnPHKJ5JSHGBlmNmfIoGksxbB1jR2QvkdhEV5GcvD45lMg6d8ZE9lX8xNyozIeMV1ityAyJnWoJo7RAo3cdUfhVBdTs5FGs_EIDcd8z',
+                                ),
+                                fit: BoxFit.cover,
                               ),
-                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: AppColors.primary,
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Expanded(
+                                    child: Text(
+                                      ApiService.currentUser?.alamat?.isNotEmpty == true
+                                          ? ApiService.currentUser!.alamat!
+                                          : 'Hub Pauh • Kampus UNAND',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                ApiService.currentUser?.alamat?.isNotEmpty == true
-                                    ? ApiService.currentUser!.alamat!
-                                    : 'Hub Pauh • Kampus UNAND',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
+                                ApiService.currentUser?.nama ?? 'Sobat KosinAja',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.text,
+                                    ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            ApiService.currentUser?.nama ?? 'Sobat KosinAja',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.text,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
                     children: [
                       // Notification Bell with Unread Badge

@@ -142,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -193,7 +193,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
             } else {
-              Navigator.pushReplacementNamed(context, '/');
+              Navigator.pushReplacementNamed(context, '/onboarding');
             }
           },
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 
 class OnboardingItem {
@@ -106,18 +107,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
-  void _nextPage() {
+  void _nextPage() async {
     if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
     } else {
+      await ApiService.setOnboardingSeen();
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/register');
     }
   }
 
-  void _skipToLogin() {
+  void _skipToLogin() async {
+    await ApiService.setOnboardingSeen();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 
@@ -411,8 +416,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
+                        onTap: () async {
+                          await ApiService.setOnboardingSeen();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/login');
                         },
                         child: Text(
                           'Masuk di sini',

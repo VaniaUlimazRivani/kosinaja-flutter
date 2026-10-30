@@ -543,8 +543,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: SizedBox(
                         height: 46,
                         child: ElevatedButton(
-                          onPressed: () {
-                            ApiService.logout();
+                          onPressed: () async {
+                            await ApiService.logout();
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                             Navigator.pushNamedAndRemoveUntil(
                               context,
