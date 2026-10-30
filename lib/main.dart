@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'core/services/api_service.dart';
 import 'core/theme/app_theme.dart';
 import 'models/booking_model.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -14,7 +16,11 @@ import 'screens/help/help_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
+  // Pulihkan sesi user & konfigurasi aplikasi dari penyimpanan lokal persisten
+  await ApiService.initSession();
   runApp(const KosinAjaApp());
 }
 
@@ -29,7 +35,19 @@ class KosinAjaApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       initialRoute: '/',
       routes: {
-        '/': (context) => const OnboardingScreen(),
+        '/': (context) {
+          // 1. Jika sudah ada sesi aktif -> langsung masuk Dashboard Home
+          if (ApiService.isLoggedIn) {
+            return const HomeScreen();
+          }
+          // 2. Jika belum login tapi sudah pernah lewati onboarding -> langsung Login
+          if (ApiService.hasSeenOnboarding) {
+            return const LoginScreen();
+          }
+          // 3. User baru pertama kali buka app -> Tampilkan Onboarding
+          return const OnboardingScreen();
+        },
+        '/onboarding': (context) => const OnboardingScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
