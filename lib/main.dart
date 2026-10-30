@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/app_theme.dart';
 import 'models/booking_model.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -21,6 +22,11 @@ void main() async {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint('Firebase init info: $e');
+  }
+  try {
+    await initializeDateFormatting('id_ID', null);
+  } catch (e) {
+    debugPrint('Locale init info: $e');
   }
   runApp(const KosinAjaApp());
 }

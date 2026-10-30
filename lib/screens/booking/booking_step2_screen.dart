@@ -104,6 +104,16 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
     }
   }
 
+  String _formatDayName(DateTime date) {
+    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    return days[date.weekday - 1];
+  }
+
+  String _formatDayMonth(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
   void _proceedToStep3() {
     final addr = _addressCtrl.text.trim();
     if (addr.isEmpty) {
@@ -436,8 +446,8 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                         itemBuilder: (context, index) {
                           final date = _availableDates[index];
                           final isSelected = DateUtils.isSameDay(date, _booking.pickupDate);
-                          final dayName = DateFormat('EEE', 'id_ID').format(date);
-                          final dayNum = DateFormat('d MMM', 'id_ID').format(date);
+                          final dayName = _formatDayName(date);
+                          final dayNum = _formatDayMonth(date);
 
                           return GestureDetector(
                             onTap: () {

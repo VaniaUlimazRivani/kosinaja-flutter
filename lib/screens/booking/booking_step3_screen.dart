@@ -218,10 +218,19 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
     }
   }
 
+  String _formatFullDate(DateTime date) {
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return '${days[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeItems = _booking.items.where((i) => i.quantity > 0).toList();
-    final pickupDateStr = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_booking.pickupDate);
+    final pickupDateStr = _formatFullDate(_booking.pickupDate);
 
     return Scaffold(
       backgroundColor: AppColors.background,
