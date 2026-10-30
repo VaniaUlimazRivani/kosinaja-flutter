@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
+import '../../widgets/xendit_payment_modal.dart';
 
 class BookingStep3Screen extends StatefulWidget {
   final BookingData? bookingData;
@@ -26,7 +27,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
     _booking = widget.bookingData ?? BookingData();
   }
 
-  void _showSuccessModal() {
+  void _showSuccessModal({bool isCod = false}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -52,19 +53,21 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Pembayaran Berhasil!',
-                  style: TextStyle(
+                Text(
+                  isCod ? 'Pesanan Terkonfirmasi!' : 'Pembayaran Terverifikasi!',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.text,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Pesanan penitipan telah terkonfirmasi. Kurir armada Padang siap menjemput barang sesuai jadwal.',
+                Text(
+                  isCod
+                      ? 'Pesanan penitipan telah dibuat. Silakan siapkan uang tunai sesuai tagihan untuk kurir saat penjemputan barang.'
+                      : 'Pembayaran via Xendit telah berhasil diterima. Kurir armada Padang siap menjemput barang sesuai jadwal.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.4,
@@ -97,19 +100,19 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                         ],
                       ),
                       const Divider(height: 12),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Payment Gateway:',
+                          const Text(
+                            'Metode Pembayaran:',
                             style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                           ),
                           Text(
-                            'Xendit Verified (LUNAS)',
+                            isCod ? 'Tunai (COD saat Penjemputan)' : 'Xendit Gateway (LUNAS)',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E7D52),
+                              color: isCod ? AppColors.primary : const Color(0xFF2E7D52),
                             ),
                           ),
                         ],
@@ -155,6 +158,165 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
     );
   }
 
+  /// Menampilkan Modal Pesanan Berhasil Dibuat saat Belum Selesai Bayar
+  void _showPendingPaymentModal({
+    required String bookingId,
+    required String invoiceUrl,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFFEEBA)),
+                  ),
+                  child: const Icon(
+                    Icons.access_time_filled,
+                    color: Color(0xFF856404),
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Pesanan Penitipan Dibuat!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.text,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Status saat ini: Menunggu Pembayaran. Anda dapat melanjutkan pembayaran Xendit kapan saja melalui menu Riwayat.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Nomor Resi:',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            _orderCode,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Tagihan:',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            currencyFormat.format(_booking.grandTotal),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.text,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final isPaid = await XenditPaymentModal.show(
+                        context: context,
+                        bookingId: bookingId,
+                        kodeBooking: _orderCode,
+                        invoiceUrl: invoiceUrl,
+                        totalHarga: _booking.grandTotal,
+                      );
+                      if (isPaid == true) {
+                        _showSuccessModal(isCod: false);
+                      } else {
+                        _showPendingPaymentModal(bookingId: bookingId, invoiceUrl: invoiceUrl);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0052CC),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.payment, size: 18),
+                    label: const Text('Buka Pop-up Pembayaran'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.pushNamedAndRemoveUntil(context, '/orders', (r) => false);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                    ),
+                    child: const Text('Lihat di Menu Riwayat'),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
+                  },
+                  child: const Text(
+                    'Kembali ke Beranda',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _handlePay() async {
     setState(() {
       _isProcessing = true;
@@ -188,6 +350,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
       'durasiNilai': _booking.durationCount,
       'metodePickup': 'PICKUP',
       'metodeDelivery': 'DELIVERY',
+      'metodePembayaran': _selectedPayment,
       'latitude': -0.9294,
       'longitude': 100.3632,
     };
@@ -196,19 +359,8 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
     if (!mounted) return;
 
-    setState(() {
-      _isProcessing = false;
-    });
-
-    if (result['success'] == true) {
-      final bookingData = result['booking'];
-      if (bookingData != null && bookingData['kodeBooking'] != null) {
-        setState(() {
-          _orderCode = bookingData['kodeBooking'];
-        });
-      }
-      _showSuccessModal();
-    } else {
+    if (result['success'] != true) {
+      setState(() => _isProcessing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['error'] ?? 'Gagal membuat booking penitipan.'),
@@ -216,6 +368,61 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    final bookingData = result['booking'];
+    final bookingId = bookingData != null ? bookingData['id'] : null;
+
+    if (bookingData != null && bookingData['kodeBooking'] != null) {
+      setState(() {
+        _orderCode = bookingData['kodeBooking'];
+      });
+    }
+
+    // Jika metode pembayaran COD (Tunai saat Kurir Tiba)
+    if (_selectedPayment == 'COD' || bookingId == null) {
+      setState(() => _isProcessing = false);
+      _showSuccessModal(isCod: true);
+      return;
+    }
+
+    // Jika Online (QRIS atau Virtual Account Xendit)
+    final invoiceRes = await ApiService.createXenditInvoice(bookingId);
+
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+
+    final invoiceUrl = invoiceRes['invoiceUrl'] as String?;
+
+    if (invoiceRes['success'] == true && invoiceUrl != null && invoiceUrl.isNotEmpty) {
+      // Tampilkan Pop-up Pembayaran In-App Xendit (WebView modal tanpa keluar aplikasi)
+      final isPaid = await XenditPaymentModal.show(
+        context: context,
+        bookingId: bookingId,
+        kodeBooking: _orderCode,
+        invoiceUrl: invoiceUrl,
+        totalHarga: _booking.grandTotal,
+      );
+
+      if (!mounted) return;
+
+      if (isPaid == true) {
+        _showSuccessModal(isCod: false);
+      } else {
+        _showPendingPaymentModal(bookingId: bookingId, invoiceUrl: invoiceUrl);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            invoiceRes['error'] ?? 'Booking dibuat, silakan selesaikan pembayaran di menu Riwayat.',
+          ),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _showSuccessModal(isCod: false);
     }
   }
 
