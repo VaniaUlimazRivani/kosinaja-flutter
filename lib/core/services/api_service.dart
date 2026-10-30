@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiUser {
   final String id;
@@ -115,8 +116,72 @@ class ApiService {
         if (currentUser != null && currentUser!.id.isNotEmpty) 'x-user-id': currentUser!.id,
       };
 
+  // Key penyimpanan lokal sesi pengguna
+  static const String _sessionKey = 'kosinaja_user_session';
+  static const String _onboardingKey = 'kosinaja_has_seen_onboarding';
+
+  // Status onboarding lokal
+  static bool _hasSeenOnboarding = false;
+
   // Session pengguna yang sedang aktif/login di aplikasi
   static ApiUser? currentUser;
+
+  /// Cek apakah pengguna saat ini berstatus login aktif
+  static bool get isLoggedIn => currentUser != null && currentUser!.id.isNotEmpty;
+
+  /// Cek apakah pengguna sudah pernah melihat/melewati onboarding
+  static bool get hasSeenOnboarding => _hasSeenOnboarding;
+
+  /// Memulihkan data sesi pengguna dan status onboarding dari penyimpanan lokal (SharedPreferences)
+  static Future<void> initSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _hasSeenOnboarding = prefs.getBool(_onboardingKey) ?? false;
+      final rawSession = prefs.getString(_sessionKey);
+      if (rawSession != null && rawSession.isNotEmpty) {
+        final Map<String, dynamic> userMap = jsonDecode(rawSession);
+        currentUser = ApiUser.fromJson(userMap);
+        debugPrint('[ApiService] Sesi pengguna berhasil dipulihkan: ${currentUser?.email} (${currentUser?.nama})');
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Gagal memulihkan sesi lokal: $e');
+    }
+  }
+
+  /// Menyimpan sesi pengguna ke penyimpanan lokal persisten
+  static Future<void> saveSession(ApiUser user) async {
+    currentUser = user;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_sessionKey, jsonEncode(user.toJson()));
+      debugPrint('[ApiService] Sesi pengguna ${user.email} berhasil disimpan secara persisten.');
+    } catch (e) {
+      debugPrint('[ApiService] Gagal menyimpan sesi lokal: $e');
+    }
+  }
+
+  /// Menandai bahwa onboarding telah selesai atau dilewati
+  static Future<void> setOnboardingSeen() async {
+    _hasSeenOnboarding = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_onboardingKey, true);
+    } catch (e) {
+      debugPrint('[ApiService] Gagal menyimpan flag onboarding: $e');
+    }
+  }
+
+  /// Keluar dari sesi aplikasi dan menghapus data sesi dari penyimpanan lokal
+  static Future<void> logout() async {
+    currentUser = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_sessionKey);
+      debugPrint('[ApiService] Sesi pengguna berhasil dihapus (Logout).');
+    } catch (e) {
+      debugPrint('[ApiService] Gagal membersihkan sesi lokal: $e');
+    }
+  }
 
   /// Helper untuk merespon error koneksi yang ramah pengguna
   static String _formatConnectionError(Object e) {
@@ -160,6 +225,8 @@ class ApiService {
       if (response.statusCode == 201) {
         if (data['user'] != null) {
           currentUser = ApiUser.fromJson(data['user']);
+          await saveSession(currentUser!);
+          await setOnboardingSeen();
         }
         return {
           'success': true,
@@ -206,6 +273,8 @@ class ApiService {
       if (response.statusCode == 200) {
         if (data['user'] != null) {
           currentUser = ApiUser.fromJson(data['user']);
+          await saveSession(currentUser!);
+          await setOnboardingSeen();
         }
         return {
           'success': true,
@@ -224,11 +293,6 @@ class ApiService {
         'error': _formatConnectionError(e),
       };
     }
-  }
-
-  /// Keluar dari sesi aplikasi
-  static void logout() {
-    currentUser = null;
   }
 
   // ===========================================================================
@@ -251,6 +315,7 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         if (data['user'] != null) {
           currentUser = ApiUser.fromJson(data['user']);
+          await saveSession(currentUser!);
         }
         return {
           'success': true,
@@ -305,6 +370,7 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         if (data['user'] != null) {
           currentUser = ApiUser.fromJson(data['user']);
+          await saveSession(currentUser!);
         }
         return {
           'success': true,
@@ -442,12 +508,13 @@ class ApiService {
   }
 
   // ===========================================================================
-  // 4. PEMBAYARAN MIDTRANS (PAYMENTS)
+  // 4. PEMBAYARAN XENDIT (PAYMENTS)
   // ===========================================================================
 
-  /// Meminta Snap Token Midtrans untuk pembayaran penitipan
-  static Future<Map<String, dynamic>> createPaymentSnapToken(String bookingId) async {
-    final url = Uri.parse('$baseUrl/payments/snap-token');
+  /// Membuat Invoice Pembayaran Xendit (Mendukung QRIS, Virtual Account, E-Wallet)
+  static Future<Map<String, dynamic>> createXenditInvoice(String bookingId) async {
+    // Coba endpoint resmi Xendit invoice terlebih dahulu
+    final url = Uri.parse('$baseUrl/payments/xendit/invoice');
 
     try {
       final response = await http
@@ -463,12 +530,48 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
+          'message': data['message'] ?? 'Invoice Xendit berhasil dibuat',
           'data': data['data'],
+          'invoiceUrl': data['data']?['invoiceUrl'] ?? data['data']?['redirectUrl'],
+          'invoiceId': data['data']?['invoiceId'] ?? data['data']?['token'],
+        };
+      } else {
+        // Fallback ke /payments/snap-token jika endpoint xendit/invoice belum ter-deploy di server
+        return await _createPaymentFallback(bookingId, data['error']);
+      }
+    } catch (e) {
+      // Coba fallback ke snap-token endpoint
+      return await _createPaymentFallback(bookingId, null);
+    }
+  }
+
+  /// Fallback pembuat token/invoice untuk kompatibilitas ke belakang
+  static Future<Map<String, dynamic>> _createPaymentFallback(String bookingId, String? previousError) async {
+    final fallbackUrl = Uri.parse('$baseUrl/payments/snap-token');
+
+    try {
+      final response = await http
+          .post(
+            fallbackUrl,
+            headers: headers,
+            body: jsonEncode({'bookingId': bookingId}),
+          )
+          .timeout(requestTimeout);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Invoice pembayaran berhasil dibuat',
+          'data': data['data'],
+          'invoiceUrl': data['data']?['invoiceUrl'] ?? data['data']?['redirectUrl'],
+          'invoiceId': data['data']?['invoiceId'] ?? data['data']?['token'],
         };
       } else {
         return {
           'success': false,
-          'error': data['error'] ?? 'Gagal membuat token pembayaran Midtrans',
+          'error': data['error'] ?? previousError ?? 'Gagal membuat invoice pembayaran Xendit',
         };
       }
     } catch (e) {
@@ -477,6 +580,11 @@ class ApiService {
         'error': _formatConnectionError(e),
       };
     }
+  }
+
+  /// Alias kompatibilitas untuk createXenditInvoice
+  static Future<Map<String, dynamic>> createPaymentSnapToken(String bookingId) async {
+    return await createXenditInvoice(bookingId);
   }
 
   /// Mengecek status pembayaran booking realtime
