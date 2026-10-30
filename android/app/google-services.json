@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1018403489341",
+    "project_id": "safetitip",
+    "storage_bucket": "safetitip.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018403489341:android:caa8ae7810bb6bffbdcc54",
+        "android_client_info": {
+          "package_name": "com.kosinaja.app.kosinaja_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018403489341-5i2covg8skbr0oh6ake14jcvit9dnvfb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kosinaja.app.kosinaja_flutter",
+            "certificate_hash": "daacfd35760adf37d1b77a35e2729e766ae5274c"
+          }
+        },
+        {
+          "client_id": "1018403489341-kom26is1kbi82blinu450mds1rl5l2q9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHLpU44qDy_JMqvVhWv4zhJ15FvoMXg1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1018403489341-kom26is1kbi82blinu450mds1rl5l2q9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

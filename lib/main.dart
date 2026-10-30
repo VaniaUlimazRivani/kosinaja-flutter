@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'models/booking_model.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -14,7 +15,13 @@ import 'screens/help/help_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init info: $e');
+  }
   runApp(const KosinAjaApp());
 }
 

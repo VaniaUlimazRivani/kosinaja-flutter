@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
 
@@ -18,12 +19,14 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
   final TextEditingController _addressCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
 
-  final List<String> _campusChips = [
-    'UNAND Limau Manih',
-    'UNP Air Tawar',
-    'UIN IB Lubuk Lintah',
-    'UPI Lubuk Begalung',
-    'Politeknik Negeri Padang',
+  final List<String> _areaChips = [
+    'Pauh & Sekitarnya',
+    'Padang Barat / Pusat Kota',
+    'Padang Timur',
+    'Padang Utara',
+    'Kuranji',
+    'Lubuk Begalung',
+    'Koto Tangah & Sekitarnya',
   ];
 
   final List<String> _sessions = [
@@ -38,11 +41,26 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
   void initState() {
     super.initState();
     _booking = widget.bookingData ?? BookingData();
+
+    // Jika alamat masih kosong, cek apakah user yang login punya data alamat tersimpan
+    if (_booking.kosAddress.trim().isEmpty) {
+      final user = ApiService.currentUser;
+      final userAddr = user?.alamat;
+      if (userAddr != null && userAddr.trim().isNotEmpty) {
+        _booking.kosAddress = userAddr.trim();
+      }
+    }
+
     _addressCtrl.text = _booking.kosAddress;
     _noteCtrl.text = _booking.kosNote;
 
     final now = DateTime.now();
     _availableDates = List.generate(7, (i) => now.add(Duration(days: i + 1)));
+
+    // Pastikan tanggal default masuk ke salah satu list tanggal tersedia
+    if (!_availableDates.any((d) => DateUtils.isSameDay(d, _booking.pickupDate))) {
+      _availableDates.insert(0, _booking.pickupDate);
+    }
   }
 
   @override
@@ -52,12 +70,46 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
     super.dispose();
   }
 
+  Future<void> _pickCustomDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _booking.pickupDate.isBefore(now) ? now.add(const Duration(days: 1)) : _booking.pickupDate,
+      firstDate: now.add(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 90)),
+      helpText: 'PILIH TANGGAL PENJEMPUTAN',
+      confirmText: 'PILIH',
+      cancelText: 'BATAL',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.text,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _booking.pickupDate = picked;
+        if (!_availableDates.any((d) => DateUtils.isSameDay(d, picked))) {
+          _availableDates.insert(0, picked);
+        }
+      });
+    }
+  }
+
   void _proceedToStep3() {
     final addr = _addressCtrl.text.trim();
     if (addr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap masukkan alamat lengkap kosan penjemputan.'),
+          content: Text('Harap masukkan alamat lengkap penjemputan barang Anda.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -152,9 +204,9 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Kampus Area Quick Select
+                    // Area Quick Select
                     const Text(
-                      'Pilih Area Kampus Terdekat',
+                      'Pilih Area / Wilayah Penjemputan',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -166,7 +218,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _campusChips.map((campus) {
+                      children: _areaChips.map((campus) {
                         final isSelected = _booking.campus == campus;
                         return ChoiceChip(
                           label: Text(campus),
@@ -197,9 +249,9 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
 
                     const SizedBox(height: 20),
 
-                    // Alamat Kos Input
+                    // Alamat Input
                     const Text(
-                      'Alamat Penjemputan Kosan',
+                      'Alamat Lengkap Penjemputan',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -212,7 +264,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                       controller: _addressCtrl,
                       maxLines: 2,
                       decoration: const InputDecoration(
-                        hintText: 'Nama kos, jalan, RT/RW, dan kelurahan...',
+                        hintText: 'Nama kos/rumah/kontrakan, nama jalan, nomor, RT/RW, dan kelurahan...',
                         prefixIcon: Padding(
                           padding: EdgeInsets.only(bottom: 24),
                           child: Icon(Icons.location_on_outlined, color: AppColors.primary),
@@ -226,7 +278,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                     TextField(
                       controller: _noteCtrl,
                       decoration: const InputDecoration(
-                        hintText: 'Patokan khusus (misal: samping warung nasi, lantai 2 kamar 8)',
+                        hintText: 'Patokan lokasi (misal: samping warung makan, pagar hijau, lantai 2)',
                         prefixIcon: Icon(Icons.notes_outlined, color: AppColors.primary),
                       ),
                     ),
@@ -279,7 +331,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                                         Icon(Icons.near_me, size: 12, color: Colors.white),
                                         SizedBox(width: 4),
                                         Text(
-                                          'Radius Tercover: Padang Timur & Pauh',
+                                          'Layanan Antar-Jemput: Seluruh Kota Padang',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 10,
@@ -314,7 +366,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Flat Ongkir Mahasiswa Padang',
+                                      'Layanan Antar-Jemput Gratis',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
@@ -322,7 +374,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                                       ),
                                     ),
                                     Text(
-                                      'Tarif tetap se-Kecamatan Pauh & Padang Kota',
+                                      'Armada siap menjemput langsung ke seluruh Kota Padang',
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: AppColors.textSecondary,
@@ -332,7 +384,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                                 ),
                               ),
                               Text(
-                                currencyFormat.format(_booking.deliveryFee),
+                                _booking.deliveryFee == 0 ? 'GRATIS' : currencyFormat.format(_booking.deliveryFee),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -347,14 +399,31 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
 
                     const SizedBox(height: 24),
 
-                    // Tanggal Penjemputan
-                    const Text(
-                      'Pilih Tanggal Penjemputan',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
+                    // Tanggal Penjemputan dengan tombol Kalender
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Pilih Tanggal Penjemputan',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _pickCustomDate,
+                          icon: const Icon(Icons.calendar_month, size: 16, color: AppColors.primary),
+                          label: const Text(
+                            'Pilih di Kalender',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
 
@@ -528,7 +597,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Estimasi Total Sewa + Ongkir',
+                          'Estimasi Total Sewa',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,

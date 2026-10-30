@@ -55,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                               Text(
                                 ApiService.currentUser?.alamat?.isNotEmpty == true
                                     ? ApiService.currentUser!.alamat!
-                                    : 'Hub Pauh • Kampus UNAND',
+                                    : 'Kota Padang & Sekitarnya',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            ApiService.currentUser?.nama ?? 'Sobat KosinAja',
+                            ApiService.currentUser?.nama ?? 'Pelanggan KosinAja',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.text,
@@ -159,10 +159,10 @@ class HomeScreen extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.bolt, size: 14, color: Colors.white),
+                          Icon(Icons.verified_outlined, size: 14, color: Colors.white),
                           SizedBox(width: 4),
                           Text(
-                            'Musim Liburan Semester',
+                            'Layanan Penitipan Terpercaya',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -174,7 +174,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Titip Barang Kos Aman,\nLiburan Pulang Tanpa Beban',
+                      'Titip Barang Mudah & Aman,\nUrusan Selesai Tanpa Beban',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -184,7 +184,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Dijemput langsung ke kosan di Pasar Baru, Pauh, & Air Tawar.',
+                      'Layanan penjemputan & pengantaran barang langsung ke alamat Anda di area Padang.',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 12,
@@ -221,7 +221,7 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Live Real-time Status Alert Banner (Interactive)
+              // Live Real-time Status Alert Banner
               InkWell(
                 onTap: () {
                   Navigator.pushNamed(context, '/notifications');
@@ -250,7 +250,7 @@ class HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Notifikasi Terkini • Driver Menuju Kos',
+                              'Notifikasi Terkini • Armada Penjemputan',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -259,7 +259,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Ahmad Dani dalam perjalanan (Slot Siang). Tap untuk lacak...',
+                              'Kurir armada sedang dalam perjalanan menuju lokasi Anda. Tap untuk melacak...',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.text,
@@ -479,7 +479,7 @@ class HomeScreen extends StatelessWidget {
                       context,
                       icon: Icons.videocam_outlined,
                       title: 'CCTV 24/7',
-                      desc: 'Gudang Pauh termonitor live & sensor suhu',
+                      desc: 'Gudang penyimpanan termonitor 24 jam dengan sensor suhu & keamanan',
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -487,8 +487,8 @@ class HomeScreen extends StatelessWidget {
                     child: _buildFeatureCard(
                       context,
                       icon: Icons.local_shipping_outlined,
-                      title: 'Jemput Kosan',
-                      desc: 'Armada pick-up siap angkut di Padang',
+                      title: 'Antar Jemput Lokasi',
+                      desc: 'Armada kurir siap jemput & antar ke alamat Anda di Padang',
                     ),
                   ),
                 ],
@@ -499,18 +499,18 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: _buildFeatureCard(
                       context,
-                      icon: Icons.shield_outlined,
-                      title: 'Garansi Rp 10 Juta',
-                      desc: 'Perlindungan barang resmi KosinAja',
+                      icon: Icons.verified_user_outlined,
+                      title: 'Perjanjian & Garansi',
+                      desc: 'Sesuai kesepakatan dan ada perjanjian resmi sebelum sah penitipan',
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildFeatureCard(
                       context,
-                      icon: Icons.price_check_outlined,
-                      title: 'Harga Mahasiswa',
-                      desc: 'Mulai Rp 15.000 hemat kantong',
+                      icon: Icons.payments_outlined,
+                      title: 'Tarif Terjangkau',
+                      desc: 'Mulai dari Rp 10.000 dengan pilihan durasi harian, mingguan, & bulanan',
                     ),
                   ),
                 ],
@@ -537,23 +537,23 @@ class HomeScreen extends StatelessWidget {
         unselectedItemColor: AppColors.textSecondary,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.cottage_outlined),
-            activeIcon: Icon(Icons.cottage),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2_outlined),
-            activeIcon: Icon(Icons.inventory_2),
+            activeIcon: Icon(Icons.inventory_2_rounded),
             label: 'Booking',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_shipping_outlined),
-            activeIcon: Icon(Icons.local_shipping),
+            activeIcon: Icon(Icons.local_shipping_rounded),
             label: 'Riwayat',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            activeIcon: Icon(Icons.account_circle),
+            icon: Icon(Icons.person_outline_rounded),
+            activeIcon: Icon(Icons.person_rounded),
             label: 'Profil',
           ),
         ],
