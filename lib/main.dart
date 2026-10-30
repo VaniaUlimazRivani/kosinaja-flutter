@@ -15,6 +15,7 @@ import 'screens/orders/orders_screen.dart';
 import 'screens/help/help_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
+import 'screens/location/location_shipping_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +58,7 @@ class KosinAjaApp extends StatelessWidget {
         '/help': (context) => const HelpScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/notifications': (context) => const NotificationsScreen(),
+        '/location-shipping': (context) => const LocationShippingScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/booking-step2') {
