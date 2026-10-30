@@ -522,6 +522,17 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                       isRecommended: false,
                     ),
 
+                    if (_selectedPayment == 'QRIS') ...[
+                      const SizedBox(height: 14),
+                      _buildQrisCard(),
+                    ] else if (_selectedPayment == 'VA') ...[
+                      const SizedBox(height: 14),
+                      _buildVaCard(),
+                    ] else if (_selectedPayment == 'COD') ...[
+                      const SizedBox(height: 14),
+                      _buildCodCard(),
+                    ],
+
                     const SizedBox(height: 24),
 
                     // Rincian Biaya
@@ -657,12 +668,14 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Row(
+                        : Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Konfirmasi & Bayar'),
-                              SizedBox(width: 6),
-                              Icon(Icons.lock, size: 16),
+                              Text(_selectedPayment == 'QRIS'
+                                  ? 'Saya Sudah Bayar via QRIS'
+                                  : 'Konfirmasi & Bayar'),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.lock, size: 16),
                             ],
                           ),
                   ),
@@ -765,6 +778,204 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildQrisCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withOpacity(0.35), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE11D48),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'QRIS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'KosinAja Padang',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.text),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.timer_outlined, size: 12, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text('15:00', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Barcode QRIS Asli
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=00020101021226590014ID.LINKAJA.WWW011893600911002220790202150821234567895204541153033605406${_booking.grandTotal}5802ID5914KOSINAJA%20PADANG6006PADANG6304',
+                width: 190,
+                height: 190,
+                fit: BoxFit.contain,
+                loadingBuilder: (ctx, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    width: 190,
+                    height: 190,
+                    color: Colors.grey.shade50,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => Container(
+                  width: 190,
+                  height: 190,
+                  color: Colors.grey.shade50,
+                  child: const Center(
+                    child: Icon(Icons.qr_code_2, size: 130, color: AppColors.text),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'NMID: ID102438910283',
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            currencyFormat.format(_booking.grandTotal),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
+          ),
+          const Divider(height: 20),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle, size: 14, color: AppColors.success),
+              SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'BCA, Mandiri, BRI, BSI, Bank Nagari, GoPay, OVO, ShopeePay',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVaCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nomor Virtual Account (Bank Nagari / Mandiri)',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '8808 1310 2024 889',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.text, letterSpacing: 1),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.copy, size: 18, color: AppColors.primary),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Nomor VA berhasil disalin!')),
+                  );
+                },
+              ),
+            ],
+          ),
+          const Text(
+            'Atas Nama: KosinAja Penitipan Barang',
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFFD97706), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Siapkan uang tunai pas sebesar ${currencyFormat.format(_booking.grandTotal)} saat kurir menjemput barang di lokasi Anda.',
+              style: const TextStyle(fontSize: 11.5, color: Color(0xFF92400E), height: 1.3),
+            ),
+          ),
+        ],
       ),
     );
   }
