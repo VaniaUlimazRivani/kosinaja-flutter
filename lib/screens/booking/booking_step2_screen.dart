@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
+import '../../widgets/location_picker_widget.dart';
 
 class BookingStep2Screen extends StatefulWidget {
   final BookingData? bookingData;
@@ -19,16 +20,6 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
   final TextEditingController _addressCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
 
-  final List<String> _areaChips = [
-    'Pauh & Sekitarnya',
-    'Padang Barat / Pusat Kota',
-    'Padang Timur',
-    'Padang Utara',
-    'Kuranji',
-    'Lubuk Begalung',
-    'Koto Tangah & Sekitarnya',
-  ];
-
   final List<String> _sessions = [
     'Pagi (08:30 - 11:30 WIB)',
     'Siang (13:00 - 15:30 WIB)',
@@ -36,6 +27,26 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
   ];
 
   late List<DateTime> _availableDates;
+
+  int get _totalItemsCount => _booking.items.fold(0, (sum, i) => sum + i.quantity);
+
+  String get _determinedCategory {
+    final count = _totalItemsCount;
+    final hasHeavy = _booking.items.any((i) =>
+        i.type == ItemType.besar ||
+        i.name.toLowerCase().contains('kulkas') ||
+        i.name.toLowerCase().contains('kasur') ||
+        i.name.toLowerCase().contains('mesin'));
+    final hasVehicle = _booking.items.any((i) =>
+        i.type == ItemType.custom ||
+        i.name.toLowerCase().contains('motor') ||
+        i.name.toLowerCase().contains('sepeda') ||
+        i.name.toLowerCase().contains('kendaraan'));
+
+    if (hasVehicle || count > 7) return 'Custom';
+    if (hasHeavy || count >= 4) return 'B';
+    return 'A';
+  }
 
   @override
   void initState() {
@@ -214,67 +225,41 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Area Quick Select
+                    // Location Picker & Shipping Calculator (Alvin)
+                    LocationPickerWidget(
+                      category: _determinedCategory,
+                      itemCount: _totalItemsCount,
+                      onShippingCalculated: (shipping) {
+                        setState(() {
+                          _booking.deliveryFee = shipping.totalCost;
+                        });
+                      },
+                      onLocationChanged: (preset) {
+                        setState(() {
+                          _booking.campus = preset.shortName;
+                          _addressCtrl.text = preset.address;
+                          _booking.kosAddress = preset.address;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Detail Alamat Input
                     const Text(
-                      'Pilih Area / Wilayah Penjemputan',
+                      'Detail Alamat Lengkap Kosan',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: AppColors.text,
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _areaChips.map((campus) {
-                        final isSelected = _booking.campus == campus;
-                        return ChoiceChip(
-                          label: Text(campus),
-                          selected: isSelected,
-                          selectedColor: AppColors.primary,
-                          backgroundColor: AppColors.cardSurface,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.text,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: isSelected ? AppColors.primary : AppColors.border,
-                            ),
-                          ),
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() {
-                                _booking.campus = campus;
-                              });
-                            }
-                          },
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Alamat Input
-                    const Text(
-                      'Alamat Lengkap Penjemputan',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
+                    const SizedBox(height: 6),
                     TextField(
                       controller: _addressCtrl,
                       maxLines: 2,
                       decoration: const InputDecoration(
-                        hintText: 'Nama kos/rumah/kontrakan, nama jalan, nomor, RT/RW, dan kelurahan...',
+                        hintText: 'Nama kos/rumah/kontrakan, nama jalan, nomor, RT/RW...',
                         prefixIcon: Padding(
                           padding: EdgeInsets.only(bottom: 24),
                           child: Icon(Icons.location_on_outlined, color: AppColors.primary),
@@ -282,128 +267,23 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                    // Catatan Tambahan (Patokan)
+                    // Catatan Tambahan (Patokan Kosan)
+                    const Text(
+                      'Patokan / Catatan Tambahan Kosan',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     TextField(
                       controller: _noteCtrl,
                       decoration: const InputDecoration(
-                        hintText: 'Patokan lokasi (misal: samping warung makan, pagar hijau, lantai 2)',
+                        hintText: 'Misal: Samping warung Ampera, lantai 2 kamar no. 8...',
                         prefixIcon: Icon(Icons.notes_outlined, color: AppColors.primary),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Map & Distance Info Card
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Stack(
-                              children: [
-                                Image.network(
-                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuCYHHauUQKf-hMPyLgqNrQJdesZbZ13zNvqDtksCd9uCuwZdBqtdtlex-EJ4FI84Y4iaHmGSqT1lm_wZCBX5GboTnbBtE719LCpU7uKXGAU6RabgGZ7PMUOlrjI15eh1RdP1R4QOFnLufI5mftGx7Yej2kZYQGPo8eAIgzE24QgDLkGvp_Uckg2-WdvuB0Ec50KjdShz3yTZChzBZVM3VofH6gLqXzQptU-e6G21fVY8mqoXHFtFDe5',
-                                  height: 120,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                    height: 120,
-                                    color: AppColors.surfaceContainerHigh,
-                                    child: const Center(
-                                      child: Icon(Icons.map_outlined, size: 36),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.near_me, size: 12, color: Colors.white),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Layanan Antar-Jemput: Seluruh Kota Padang',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primarySoft,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.local_shipping,
-                                  color: AppColors.primary,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Layanan Antar-Jemput Gratis',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.text,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Armada siap menjemput langsung ke seluruh Kota Padang',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                _booking.deliveryFee == 0 ? 'GRATIS' : currencyFormat.format(_booking.deliveryFee),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
                       ),
                     ),
 
@@ -518,14 +398,12 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                                 _booking.pickupSession = session;
                               });
                             },
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primarySoft.withOpacity(0.4)
-                                    : AppColors.cardSurface,
-                                borderRadius: BorderRadius.circular(12),
+                                color: isSelected ? AppColors.primarySoft : AppColors.cardSurface,
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: isSelected ? AppColors.primary : AppColors.border,
                                   width: isSelected ? 1.5 : 1,
@@ -534,39 +412,17 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSelected
-                                        ? Icons.radio_button_checked
-                                        : Icons.radio_button_off,
-                                    color: isSelected ? AppColors.primary : AppColors.textMuted,
-                                    size: 20,
+                                    isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                    size: 18,
+                                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 10),
                                   Text(
                                     session,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight:
-                                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: AppColors.text,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.successSoft,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Text(
-                                      'Tersedia',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.success,
-                                      ),
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSelected ? AppColors.primary : AppColors.text,
                                     ),
                                   ),
                                 ],
@@ -576,26 +432,22 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                         );
                       }).toList(),
                     ),
-
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
             ),
 
-            // Sticky Bottom CTA
+            // Bottom Navigation Bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                border: const Border(
-                  top: BorderSide(color: AppColors.border, width: 1),
-                ),
+                color: AppColors.surface,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
@@ -607,17 +459,16 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Estimasi Total Sewa',
+                          'Estimasi Biaya + Jemput',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
                           currencyFormat.format(totalPayment),
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primary,
                           ),
@@ -625,16 +476,21 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
                   ElevatedButton(
                     onPressed: _proceedToStep3,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Lanjut: Bayar'),
+                        Text(
+                          'Lanjut ke Pembayaran',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
                         SizedBox(width: 6),
                         Icon(Icons.arrow_forward, size: 16),
                       ],

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import 'order_detail_screen.dart';
 import '../../widgets/xendit_payment_modal.dart';
 
 class OrderHistoryItem {
@@ -716,7 +717,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                             const SizedBox(width: 8),
                             if (isActive)
-                              Row(
+Row(
                                 children: [
                                   if (order.bookingId != null && order.paymentStatus != 'PAID') ...[
                                     OutlinedButton.icon(
@@ -739,7 +740,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   ],
                                   ElevatedButton(
                                     onPressed: () {
-                                      Navigator.pushNamed(context, '/tracking');
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => OrderDetailScreen(
+                                            orderCode: order.orderCode,
+                                            currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
+                                            rawData: {
+                                              'title': order.title,
+                                              'subtitle': order.subtitle,
+                                              'schedule': order.schedule,
+                                            },
+                                          ),
+                                        ),
+                                      );
                                     },
                                     style: ElevatedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -749,7 +763,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     ),
                                     child: const Row(
                                       children: [
-                                        Text('Lacak', style: TextStyle(fontSize: 12)),
+                                        Text('Detail & Lacak', style: TextStyle(fontSize: 12)),
                                         SizedBox(width: 4),
                                         Icon(Icons.arrow_forward, size: 14),
                                       ],
