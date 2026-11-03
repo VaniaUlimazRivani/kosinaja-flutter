@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -12,11 +15,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _stats;
+  String? _profileImagePath;
 
   @override
   void initState() {
     super.initState();
     _loadProfileStats();
+    _loadSavedProfileImage();
   }
 
   Future<void> _loadProfileStats() async {
@@ -29,6 +34,166 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       });
     }
+  }
+
+  Future<void> _loadSavedProfileImage() async {
+    final user = ApiService.currentUser;
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'profile_image_${user?.id ?? "local"}';
+    final savedPath = prefs.getString(key);
+    if (savedPath != null && File(savedPath).existsSync()) {
+      if (mounted) {
+        setState(() {
+          _profileImagePath = savedPath;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        final user = ApiService.currentUser;
+        final prefs = await SharedPreferences.getInstance();
+        final key = 'profile_image_${user?.id ?? "local"}';
+        await prefs.setString(key, picked.path);
+        if (mounted) {
+          setState(() {
+            _profileImagePath = picked.path;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto profil berhasil diperbarui!'),
+              backgroundColor: Color(0xFF2E7D52),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memilih foto: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Ubah Foto Profil',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.camera_alt, color: AppColors.primary),
+                  ),
+                  title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEAF5EE),
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                    child: const Icon(Icons.photo_library, color: Color(0xFF2E7D52)),
+                  ),
+                  title: const Text('Pilih dari Galeri HP', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                if (_profileImagePath != null)
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.delete_outline, color: AppColors.error),
+                    ),
+                    title: const Text('Hapus Foto (Gunakan Inisial)', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final user = ApiService.currentUser;
+                      final prefs = await SharedPreferences.getInstance();
+                      final key = 'profile_image_${user?.id ?? "local"}';
+                      await prefs.remove(key);
+                      if (mounted) {
+                        setState(() {
+                          _profileImagePath = null;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Foto profil dihapus, kembali ke inisial nama.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts[0].isEmpty) return 'K';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
   // Contact WhatsApp launcher helper
@@ -143,6 +308,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showSavedAddressesModal() {
+    final userAddr = ApiService.currentUser?.alamat?.trim() ?? '';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -184,12 +351,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Alamat yang biasa digunakan untuk penjemputan barang',
+                  'Alamat yang digunakan untuk penjemputan barang',
                   style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 18),
 
-                // Alamat 1 (Utama)
+                // Alamat Akun Utama
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -204,7 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Kos Melati Indah',
+                            'Alamat Terdaftar',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -229,49 +396,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Jl. Cendrawasih No. 12, Air Tawar Barat, Padang Utara (Dekat Fakultas Bahasa & Seni UNP)',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.3),
+                      Text(
+                        userAddr.isNotEmpty ? userAddr : 'Kota Padang, Sumatera Barat',
+                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.3),
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Catatan: Lantai 2 Kamar 204, tangga sebelah kiri',
+                        'Catatan: Alamat terverifikasi akun',
                         style: TextStyle(fontSize: 12, color: AppColors.primary, fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Alamat 2
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Kos Merpati Putih (Kampus UNAND)',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.text,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Jl. Pasar Baru No. 45, Limau Manis, Pauh, Kota Padang',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.3),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Kamar C3, dekat gerbang pos satpam',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -286,13 +418,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Fitur tambah alamat baru via Maps segera aktif!'),
+                          content: Text('Alamat dapat disesuaikan pada saat pengisian form booking.'),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },
                     icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                    label: const Text('+ Tambah Alamat Baru'),
+                    label: const Text('Atur Alamat Saat Booking'),
                   ),
                 ),
               ],
@@ -355,7 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 18),
                   _buildTermItem(
                     '1. Keaslian Identitas Mahasiswa',
-                    'Setiap penitip wajib terverifikasi melalui KTM / SSO kampus aktif untuk menjamin keamanan bersama antarmahasiswa.',
+                    'Setiap penitip wajib terverifikasi melalui data akun aktif untuk menjamin keamanan bersama antarmahasiswa.',
                   ),
                   _buildTermItem(
                     '2. Larangan Barang Terlarang',
@@ -363,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   _buildTermItem(
                     '3. Segel Keamanan Barcode',
-                    'Setiap box/koli akan disegel dengan cable-tie barcode berlisensi di depan mahasiswa saat serah terima di kos.',
+                    'Setiap box/koli akan disegel dengan stiker barcode berlisensi di depan mahasiswa saat serah terima di kos.',
                   ),
                   _buildTermItem(
                     '4. Garansi & Asuransi Perlindungan',
@@ -420,54 +552,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditProfileDialog() {
+    final user = ApiService.currentUser;
+    final nameCtrl = TextEditingController(text: user?.nama ?? '');
+    final phoneCtrl = TextEditingController(text: user?.noWa ?? '');
+    final addrCtrl = TextEditingController(text: user?.alamat ?? '');
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Edit Profil Mahasiswa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Data mahasiswa Anda telah tervalidasi via SSO UNP.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              SizedBox(height: 14),
-              TextField(
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: 'Nama Lengkap',
-                  hintText: 'Vania Ulimaz Rivani',
-                  prefixIcon: Icon(Icons.person_outline),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Perbarui data identitas Anda:',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
-              ),
-              SizedBox(height: 12),
-              TextField(
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: 'Nomor WhatsApp',
-                  hintText: '0822-8321-xxxx',
-                  prefixIcon: Icon(Icons.chat_outlined),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Lengkap',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Nomor WhatsApp',
+                    prefixIcon: Icon(Icons.chat_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: addrCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Alamat Kos / Domisili',
+                    prefixIcon: Icon(Icons.home_outlined),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tutup'),
+              child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final newName = nameCtrl.text.trim();
+                final newPhone = phoneCtrl.text.trim();
+                final newAddr = addrCtrl.text.trim();
+
+                if (newName.isEmpty) return;
+
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Perubahan data SSO memerlukan verifikasi admin.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+
+                // Update user locally in ApiService
+                if (user != null) {
+                  final updated = user.copyWith(
+                    nama: newName,
+                    noWa: newPhone,
+                    alamat: newAddr,
+                  );
+                  ApiService.currentUser = updated;
+                  setState(() {});
+                }
+
+                // Kirim ke backend jika user ID tersedia
+                if (user != null && user.id.isNotEmpty) {
+                  await ApiService.updateProfile(
+                    userId: user.id,
+                    nama: newName,
+                    noWa: newPhone,
+                    alamat: newAddr,
+                  );
+                }
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Data profil berhasil diperbarui!'),
+                      backgroundColor: Color(0xFF2E7D52),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
               child: const Text('Simpan'),
             ),
@@ -576,6 +753,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ApiService.currentUser;
+    final userName = user?.nama.isNotEmpty == true ? user!.nama : 'Pelanggan KosinAja';
+    final userPhone = user?.noWa.isNotEmpty == true ? user!.noWa : 'Belum Terdaftar';
+    final userEmail = user?.email.isNotEmpty == true ? user!.email : 'Belum Terdaftar';
+    final userAddress = user?.alamat?.isNotEmpty == true ? user!.alamat! : 'Kota Padang, Sumatera Barat';
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -641,7 +824,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: const CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.primarySoft,
-                  child: Icon(Icons.person, size: 20, color: AppColors.primary),
+                  child: Icon(Icons.edit, size: 16, color: AppColors.primary),
                 ),
               ),
             ),
@@ -654,10 +837,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(
             children: [
-              // 1. Profile Header Delight Card
+              // 1. Profile Header Delight Card (Clip antiAlias to fix overflow)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
                   color: AppColors.cardSurface,
                   borderRadius: BorderRadius.circular(24),
@@ -669,223 +851,235 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    Positioned(
-                      top: -20,
-                      right: -20,
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primaryFixed.withOpacity(0.4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(
+                    clipBehavior: Clip.antiAlias,
+                    alignment: Alignment.topCenter,
+                    children: [
+                      // Decorative Background Circles (Contained inside card)
+                      Positioned(
+                        top: -20,
+                        right: -20,
+                        child: Container(
+                          width: 110,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primaryFixed.withOpacity(0.4),
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: -15,
-                      left: -20,
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.secondaryContainer.withOpacity(0.35),
+                      Positioned(
+                        bottom: -20,
+                        left: -20,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.secondaryContainer.withOpacity(0.35),
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Card Content
-                    Column(
-                      children: [
-                        // Avatar with Edit Camera Button
-                        Stack(
+                      // Card Content
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        child: Column(
                           children: [
-                            Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.surfaceContainer,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(48),
-                                child: Image.network(
-                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuAhIoVq87JiKYyuMP0kZoIj1zQ9JYB_B0a4v9L469yQKcYFAF14Gt99EFH0h7LAURiA3J3qfJXL_HZ5XRJm7_P5FnPjflBwHygVYwuDnpS6f1R8y7lC5U30xVZrK39DPXoU4I-kHu8bjNBoABnPHKJ5JSHGBlmNmfIoGksxbB1jR2QvkdhEV5GcvD45lMg6d8ZE9lX8xNyozIeMV1ityAyJnWoJo7RAo3cdUfhVBdTs5FGs_EIDcd8z',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: AppColors.primarySoft,
-                                      child: const Icon(
-                                        Icons.person,
-                                        size: 54,
-                                        color: AppColors.primary,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Pilih foto profil baru dari galeri HP'),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
+                            // Avatar with Camera Picker Button
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 96,
+                                  height: 96,
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
+                                    color: AppColors.surfaceContainer,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(
-                                    Icons.photo_camera,
-                                    size: 18,
-                                    color: Colors.white,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(48),
+                                    child: _profileImagePath != null && File(_profileImagePath!).existsSync()
+                                        ? Image.file(
+                                            File(_profileImagePath!),
+                                            fit: BoxFit.cover,
+                                            width: 96,
+                                            height: 96,
+                                          )
+                                        : Container(
+                                            decoration: const BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [Color(0xFFB86B35), Color(0xFF8C4F23)],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                _getInitials(userName),
+                                                style: const TextStyle(
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Colors.white,
+                                                  letterSpacing: 1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                   ),
                                 ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: _showImagePickerOptions,
+                                    child: Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.camera_alt,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // User Name
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.text,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            // Verified Student Badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEAF5EE),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFFC8E6D2)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.verified_user,
+                                    color: Color(0xFF2E7D52),
+                                    size: 15,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    userAddress,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2E7D52),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Student Storage Summary Pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '${_stats?['activeBookings'] ?? 1} Box',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          'Penitipan Aktif',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 32,
+                                    width: 1,
+                                    color: AppColors.border,
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          '${_stats?['completedBookings'] ?? 3} Kali',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.secondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          'Selesai Dititip',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 14),
-
-                        // User Name
-                        Text(
-                          ApiService.currentUser?.nama ?? 'Vania Ulimaz Rivani',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.text,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        // Verified Student Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAF5EE),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFC8E6D2)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.verified_user,
-                                color: Color(0xFF2E7D52),
-                                size: 15,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                ApiService.currentUser?.alamat?.isNotEmpty == true
-                                    ? ApiService.currentUser!.alamat!
-                                    : 'Mahasiswa UNP Terverifikasi',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E7D52),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Student Storage Summary Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      '${_stats?['activeBookings'] ?? 1} Box',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    const Text(
-                                      'Penitipan Aktif',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                height: 32,
-                                width: 1,
-                                color: AppColors.border,
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      '${_stats?['completedBookings'] ?? 3} Kali',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.secondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    const Text(
-                                      'Selesai Dititip',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -952,9 +1146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconBg: const Color(0xFF25D366).withOpacity(0.15),
                       iconColor: const Color(0xFF25D366),
                       label: 'Nomor WhatsApp',
-                      value: ApiService.currentUser?.noWa.isNotEmpty == true
-                          ? ApiService.currentUser!.noWa
-                          : '0822-8321-xxxx',
+                      value: userPhone,
                       trailing: const Icon(Icons.lock_outline, size: 16, color: AppColors.textSecondary),
                     ),
 
@@ -966,9 +1158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconBg: AppColors.primaryFixed,
                       iconColor: AppColors.primary,
                       label: 'Email Terdaftar',
-                      value: ApiService.currentUser?.email.isNotEmpty == true
-                          ? ApiService.currentUser!.email
-                          : 'vania@student.unp.ac.id',
+                      value: userEmail,
                       trailing: const Icon(Icons.check_circle, size: 16, color: Color(0xFF2E7D52)),
                     ),
 
@@ -980,9 +1170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconBg: AppColors.secondaryContainer,
                       iconColor: AppColors.secondary,
                       label: 'Kampus / Domisili',
-                      value: ApiService.currentUser?.alamat?.isNotEmpty == true
-                          ? ApiService.currentUser!.alamat!
-                          : 'Universitas Negeri Padang (UNP)',
+                      value: userAddress,
                     ),
 
                     const SizedBox(height: 10),
@@ -1039,9 +1227,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 3),
-                                const Text(
-                                  'Kos Melati Indah',
-                                  style: TextStyle(
+                                Text(
+                                  userAddress,
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.text,
@@ -1049,7 +1237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 const Text(
-                                  'Jl. Cendrawasih No. 12, Air Tawar Barat, Padang Utara',
+                                  'Kota Padang, Sumatera Barat',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
@@ -1068,9 +1256,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 16),
 
-              // 3. Tactile Menu List
+              // 3. Quick Action Navigation Menu
               Container(
-                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.cardSurface,
                   borderRadius: BorderRadius.circular(20),
@@ -1084,181 +1271,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildMenuItem(
-                      icon: Icons.person_outline,
-                      title: 'Edit Profil & Data Mahasiswa',
-                      onTap: _showEditProfileDialog,
-                    ),
-                    _buildMenuItem(
+                    _buildActionTile(
                       icon: Icons.pin_drop_outlined,
+                      iconColor: AppColors.primary,
                       title: 'Alamat Kos Tersimpan',
-                      badgeText: '2 Lokasi',
+                      subtitle: 'Daftar alamat untuk penjemputan barang',
                       onTap: _showSavedAddressesModal,
                     ),
-                    _buildMenuItem(
-                      icon: Icons.health_and_safety_outlined,
-                      title: 'Pusat Bantuan & SOP Keamanan',
+                    const Divider(height: 1, indent: 64, endIndent: 20, color: AppColors.border),
+                    _buildActionTile(
+                      icon: Icons.receipt_long_outlined,
+                      iconColor: AppColors.secondary,
+                      title: 'Riwayat & Tagihan Penitipan',
+                      subtitle: 'Cek invoice, tagihan, dan bukti pembayaran',
                       onTap: () {
-                        Navigator.pushNamed(context, '/help');
+                        Navigator.pushNamed(context, '/orders');
                       },
                     ),
-                    _buildMenuItem(
-                      icon: Icons.description_outlined,
-                      title: 'Syarat & Ketentuan Penitipan',
+                    const Divider(height: 1, indent: 64, endIndent: 20, color: AppColors.border),
+                    _buildActionTile(
+                      icon: Icons.shield_outlined,
+                      iconColor: const Color(0xFF2E7D52),
+                      title: 'SOP & Ketentuan Titip',
+                      subtitle: 'Standar keamanan gudang & garansi ganti rugi',
                       onTap: _showTermsModal,
                     ),
-                    // WhatsApp Special Highlight Item
-                    InkWell(
+                    const Divider(height: 1, indent: 64, endIndent: 20, color: AppColors.border),
+                    _buildActionTile(
+                      icon: Icons.chat_outlined,
+                      iconColor: const Color(0xFF25D366),
+                      title: 'Bantuan Customer Service',
+                      subtitle: 'WhatsApp posko operasional Padang 24/7',
                       onTap: _openWhatsAppSupport,
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF5EE).withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFC8E6D2)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF25D366),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.support_agent,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Hubungi CS WhatsApp KosinAja',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.text,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.circle, color: Color(0xFF2E7D52), size: 6),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Online • Respon Cepat Mahasiswa',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Color(0xFF2E7D52),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Color(0xFF2E7D52),
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
 
-              // 4. Logout Trigger Section
+              // 4. Logout Action Button
               SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
+                height: 52,
+                child: OutlinedButton.icon(
                   onPressed: _showLogoutConfirmation,
-                  style: ElevatedButton.styleFrom(
+                  style: OutlinedButton.styleFrom(
                     backgroundColor: AppColors.cardSurface,
-                    foregroundColor: AppColors.error,
-                    elevation: 0,
+                    side: BorderSide(color: AppColors.error.withOpacity(0.4)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.error.withOpacity(0.2)),
                     ),
                   ),
-                  icon: const Icon(Icons.logout, size: 20, color: AppColors.error),
+                  icon: const Icon(Icons.logout, color: AppColors.error, size: 20),
                   label: const Text(
                     'Keluar dari Akun',
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
                       color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-              // Footer Version Info
+              // Version Footer
               const Text(
-                'KosinAja Padang v2.4.1 • Solusi Titip Kost Terpercaya',
+                'KosinAja Mobile v1.0.0 • Made with ❤️ for Padang Students',
                 style: TextStyle(
                   fontSize: 11,
                   color: AppColors.textSecondary,
                 ),
               ),
-
-              const SizedBox(height: 12),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3, // Profil tab
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (index == 1) {
-            Navigator.pushNamed(context, '/booking-step1');
-          } else if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/orders');
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.cottage_outlined),
-            activeIcon: Icon(Icons.cottage),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_2_outlined),
-            activeIcon: Icon(Icons.inventory_2),
-            label: 'Booking',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping_outlined),
-            activeIcon: Icon(Icons.local_shipping),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            activeIcon: Icon(Icons.account_circle),
-            label: 'Profil',
-          ),
-        ],
       ),
     );
   }
@@ -1280,11 +1369,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: iconBg,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 18),
           ),
@@ -1300,16 +1388,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   value,
                   style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.text,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1320,70 +1406,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildActionTile({
     required IconData icon,
+    required Color iconColor,
     required String title,
-    String? badgeText,
+    required String subtitle,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceContainer,
-                shape: BoxShape.circle,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.textSecondary, size: 20),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text,
                     ),
                   ),
-                  if (badgeText != null) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 20,
-            ),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
           ],
         ),
       ),
