@@ -195,7 +195,7 @@ class _XenditPaymentModalState extends State<XenditPaymentModal> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0052CC).withValues(alpha: 0.1),
+                    color: const Color(0xFF0052CC).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.lock_outline, color: Color(0xFF0052CC), size: 18),
@@ -219,7 +219,7 @@ class _XenditPaymentModalState extends State<XenditPaymentModal> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2E7D52).withValues(alpha: 0.12),
+                              color: const Color(0xFF2E7D52).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -339,4 +339,6 @@ class _XenditPaymentModalState extends State<XenditPaymentModal> {
     );
   }
 }
+
+
 
