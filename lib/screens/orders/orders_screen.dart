@@ -288,43 +288,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.inventory_2_outlined,
-                color: AppColors.primary,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'KosinAja',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                Text(
-                  'Riwayat Tracking',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        title: Image.asset(
+          'assets/images/logo_kosinaja.png',
+          height: 30,
+          fit: BoxFit.contain,
         ),
         actions: [
           IconButton(

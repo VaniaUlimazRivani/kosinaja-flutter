@@ -769,43 +769,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.surface.withOpacity(0.95),
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.inventory_2,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'KosinAja',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                Text(
-                  'Profil Mahasiswa',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        title: Image.asset(
+          'assets/images/logo_kosinaja.png',
+          height: 32,
+          fit: BoxFit.contain,
         ),
         actions: [
           IconButton(
