@@ -418,22 +418,25 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Preset Populer Mahasiswa Padang',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.text,
+            const Expanded(
+              child: Text(
+                'Preset Populer Mahasiswa',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
+                ),
               ),
             ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: ['Semua', 'Kampus', 'Kawasan Kos'].map((cat) {
                 final isSelected = _selectedPresetCategory == cat;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedPresetCategory = cat),
                   child: Container(
-                    margin: const EdgeInsets.only(left: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    margin: const EdgeInsets.only(left: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
