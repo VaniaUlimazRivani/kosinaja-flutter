@@ -736,7 +736,7 @@ Row(
                                       children: [
                                         Text('Detail & Lacak', style: TextStyle(fontSize: 12)),
                                         SizedBox(width: 4),
-                                        Icon(Icons.arrow_forward, size: 14),
+                                        Icon(Icons.arrow_forward_ios_rounded, size: 12),
                                       ],
                                     ),
                                   ),

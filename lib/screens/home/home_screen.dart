@@ -325,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               SizedBox(width: 6),
-                              Icon(Icons.arrow_forward_rounded, size: 16),
+                              Icon(Icons.arrow_forward_ios_rounded, size: 14),
                             ],
                           ),
                         ),
@@ -417,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.arrow_forward_rounded,
+                          Icons.arrow_forward_ios_rounded,
                           size: 15,
                           color: Color(0xFF705545),
                         ),

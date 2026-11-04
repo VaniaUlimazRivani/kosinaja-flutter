@@ -36,7 +36,7 @@ class _LocationShippingScreenState extends State<LocationShippingScreen> {
       appBar: AppBar(
         title: const Text('Peta & Cek Ongkir Padang'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -239,7 +239,7 @@ class _LocationShippingScreenState extends State<LocationShippingScreen> {
                   onPressed: () {
                     Navigator.pushNamed(context, '/booking-step1');
                   },
-                  icon: const Icon(Icons.arrow_forward),
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                   label: const Text(
                     'Lanjut Titip Barang dengan Lokasi Ini',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),

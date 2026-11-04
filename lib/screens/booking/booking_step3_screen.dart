@@ -62,7 +62,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Pesanan penitipan telah terkonfirmasi. Kurir armada Padang siap menjemput barang sesuai jadwal.',
+                  'Pesanan penitipan telah terkonfirmasi. Kurir armada Padang siap memproses barang sesuai jadwal.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -201,12 +201,17 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
           ? 'BULAN'
           : (_booking.durationType == 'Mingguan' ? 'MINGGU' : 'HARI'),
       'durasiNilai': _booking.durationCount,
-      'metodePickup': 'PICKUP',
+      'metodePickup': _booking.deliveryMethod == 'ANTAR_SENDIRI' ? 'SELF_DROP' : 'PICKUP',
       'metodeDelivery': 'DELIVERY',
+      'metodePengantaran': _booking.deliveryMethod,
+      'metodePacking': _booking.packingMethod,
+      'biayaPacking': _booking.effectivePackingFee,
+      'ongkir': _booking.effectiveDeliveryFee,
+      'jarakKm': _booking.pickupDistanceKm,
       'metodePembayaran': _selectedPayment,
       'totalHarga': _booking.grandTotal,
-      'latitude': -0.9294,
-      'longitude': 100.3632,
+      'latitude': _booking.userLatitude ?? -0.9015,
+      'longitude': _booking.userLongitude ?? 100.3540,
     };
 
     final result = await ApiService.createBooking(payload);
@@ -246,21 +251,32 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
     final pickupDateStr = _formatFullDate(_booking.pickupDate);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
-        title: const Text('Ringkasan & Bayar'),
+        backgroundColor: const Color(0xFFFAF7F2),
+        elevation: 0,
+        titleSpacing: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.text),
           onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Ringkasan & Bayar',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.text,
+          ),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Stepper Progress Header
+            // STEPPER PROGRESS HEADER (Identik Langkah 1 & 2)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              color: AppColors.surface,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              color: const Color(0xFFFAF7F2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -270,7 +286,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                       const Text(
                         'Langkah 3 dari 3: Konfirmasi & Bayar',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primary,
                         ),
@@ -278,24 +294,54 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
+                          color: const Color(0xFFF3ECE4),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5D9CC)),
                         ),
                         child: const Text(
-                          '100%',
+                          'Langkah 3/3',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
+                            color: Color(0xFF985322),
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Container(height: 6, color: AppColors.primary),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -322,7 +368,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Selesaikan pemesanan untuk konfirmasi jadwal penjemputan barang Anda.',
+                              'Selesaikan pemesanan untuk konfirmasi jadwal serah terima barang Anda.',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -413,8 +459,8 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.w700,
                                         color: item.type == ItemType.besar
-                                            ? const Color(0xFFE65100)
-                                            : const Color(0xFF1D4ED8),
+                                          ? const Color(0xFFE65100)
+                                          : const Color(0xFF1D4ED8),
                                       ),
                                     ),
                                   ),
@@ -436,6 +482,48 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Pengantaran & Jemput',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                              Text(
+                                _booking.deliveryMethod == 'ANTAR_SENDIRI'
+                                    ? 'Antar Sendiri ke Gudang'
+                                    : 'Jasa Antar Jemput Kurir',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Layanan Pengemasan',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                              Text(
+                                _booking.packingMethod == 'JASA_PACKING'
+                                    ? 'Jasa Packing KosinAja'
+                                    : 'Packing Sendiri',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _booking.packingMethod == 'JASA_PACKING'
+                                      ? AppColors.primary
+                                      : const Color(0xFF2E7D32),
                                 ),
                               ),
                             ],
@@ -561,10 +649,21 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           ),
                           const SizedBox(height: 8),
                           _buildCostRow(
-                            'Ongkos Antar-Jemput',
-                            _booking.deliveryFee == 0 ? 'GRATIS' : currencyFormat.format(_booking.deliveryFee),
-                            isGreen: _booking.deliveryFee == 0,
+                            _booking.deliveryMethod == 'ANTAR_SENDIRI'
+                                ? 'Pengantaran (Antar Sendiri)'
+                                : 'Ongkos Antar-Jemput',
+                            _booking.effectiveDeliveryFee == 0
+                                ? 'GRATIS'
+                                : currencyFormat.format(_booking.effectiveDeliveryFee),
+                            isGreen: _booking.effectiveDeliveryFee == 0,
                           ),
+                          if (_booking.effectivePackingFee > 0) ...[
+                            const SizedBox(height: 8),
+                            _buildCostRow(
+                              'Layanan Jasa Packing KosinAja',
+                              currencyFormat.format(_booking.effectivePackingFee),
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           _buildCostRow(
                             'Perjanjian & Garansi Penitipan',
@@ -971,7 +1070,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Siapkan uang tunai pas sebesar ${currencyFormat.format(_booking.grandTotal)} saat kurir menjemput barang di lokasi Anda.',
+              'Siapkan uang tunai pas sebesar ${currencyFormat.format(_booking.grandTotal)} saat serah terima barang di lokasi Anda.',
               style: const TextStyle(fontSize: 11.5, color: Color(0xFF92400E), height: 1.3),
             ),
           ),

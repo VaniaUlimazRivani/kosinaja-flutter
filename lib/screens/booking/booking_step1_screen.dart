@@ -102,7 +102,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                     controller: nameCtrl,
                     decoration: InputDecoration(
                       hintText: 'Misal: Kulkas Mini, Dus Buku, Koper...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                   ),
@@ -127,7 +127,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                             decoration: BoxDecoration(
                               color: selectedType == ItemType.kecil ? const Color(0xFFF6ECE1) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: selectedType == ItemType.kecil ? AppColors.primary : AppColors.border,
                                 width: selectedType == ItemType.kecil ? 1.5 : 1,
@@ -164,7 +164,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                             decoration: BoxDecoration(
                               color: selectedType == ItemType.besar ? const Color(0xFFF6ECE1) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: selectedType == ItemType.besar ? AppColors.primary : AppColors.border,
                                 width: selectedType == ItemType.besar ? 1.5 : 1,
@@ -219,9 +219,10 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('Simpan Barang', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: const Text('Simpan Barang', style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ],
@@ -239,6 +240,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
         const SnackBar(
           content: Text('Harap tambahkan minimal 1 barang titipan.'),
           backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -249,6 +251,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
         SnackBar(
           content: Text(_booking.categoryReason),
           backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -266,14 +269,28 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
     final cat = _booking.category;
     final totalCount = _booking.totalItemCount;
     final price = _booking.storageSubtotal;
+    final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
-        title: const Text('Pemesanan Penitipan'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+        backgroundColor: const Color(0xFFFAF7F2),
+        elevation: 0,
+        titleSpacing: canPop ? 0 : 20,
+        automaticallyImplyLeading: false,
+        leading: canPop
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.text),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        title: const Text(
+          'Booking Penitipan',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2E2018),
+          ),
         ),
       ),
       body: SafeArea(
@@ -281,8 +298,8 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
           children: [
             // Stepper Progress Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              color: AppColors.surface,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              color: const Color(0xFFFAF7F2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -292,7 +309,7 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                       const Text(
                         'Langkah 1 dari 3: Barang & Durasi',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primary,
                         ),
@@ -300,35 +317,54 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
+                          color: const Color(0xFFF3ECE4),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5D9CC)),
                         ),
                         child: const Text(
-                          '33%',
+                          'Langkah 1/3',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
+                            color: Color(0xFF985322),
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Container(height: 6, color: AppColors.primary),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
-                        Expanded(
-                          flex: 2,
-                          child: Container(height: 6, color: AppColors.surfaceContainerHigh),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8DACB),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8DACB),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -336,55 +372,158 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. HEADER LIST BARANG
+                    // Auto-Klasifikasi Pintar Card (Aturan Asli)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cat == 'A'
+                            ? const Color(0xFFF0FDF4)
+                            : (cat == 'B' ? const Color(0xFFFFF7ED) : const Color(0xFFFEF2F2)),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: cat == 'A'
+                              ? const Color(0xFF86EFAC)
+                              : (cat == 'B' ? const Color(0xFFFDBA74) : const Color(0xFFFCA5A5)),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: cat == 'A'
+                                  ? const Color(0xFFDCFCE7)
+                                  : (cat == 'B' ? const Color(0xFFFFEDD5) : const Color(0xFFFEE2E2)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              cat == 'A'
+                                  ? Icons.check_circle_outline
+                                  : (cat == 'B' ? Icons.stars_rounded : Icons.warning_amber_rounded),
+                              size: 20,
+                              color: cat == 'A'
+                                  ? const Color(0xFF15803D)
+                                  : (cat == 'B' ? const Color(0xFFC2410C) : const Color(0xFFB91C1C)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      cat == 'A'
+                                          ? 'Kategori A (Hemat)'
+                                          : (cat == 'B' ? 'Kategori B (Lengkap)' : 'Kategori: $cat'),
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: cat == 'A'
+                                            ? const Color(0xFF15803D)
+                                            : (cat == 'B' ? const Color(0xFFC2410C) : const Color(0xFFB91C1C)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: cat == 'A'
+                                            ? const Color(0xFF15803D).withOpacity(0.12)
+                                            : const Color(0xFFC2410C).withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        cat == 'A' ? 'Maks 3 Item Kecil' : 'Barang Besar / >3 Item',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                          color: cat == 'A' ? const Color(0xFF15803D) : const Color(0xFFC2410C),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _booking.categoryReason,
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: cat == 'A' ? const Color(0xFF4B7355) : const Color(0xFF7C5035),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Header List Barang
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Daftar Barang Titipan ($totalCount item)',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.text,
-                              ),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF2E2018),
+                          ),
                         ),
-                        TextButton.icon(
-                          onPressed: _showAddItemDialog,
-                          icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
-                          label: const Text(
-                            'Tambah Barang',
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12),
+                        GestureDetector(
+                          onTap: _showAddItemDialog,
+                          child: const Text(
+                            '+ Tambah Barang',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
-                    // LIST ITEM
+                    // List Item Barang
                     if (_booking.items.isEmpty)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
+                          color: const Color(0xFFF8F3EC),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFECE2D5)),
                         ),
                         child: Center(
                           child: Column(
                             children: [
-                              const Icon(Icons.inbox_outlined, size: 36, color: AppColors.textMuted),
+                              const Text('📦', style: TextStyle(fontSize: 32)),
                               const SizedBox(height: 8),
-                              const Text('Belum ada barang ditambahkan', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                              const SizedBox(height: 8),
+                              const Text(
+                                'Belum ada barang ditambahkan',
+                                style: TextStyle(color: Color(0xFF8C7A70), fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 10),
                               ElevatedButton(
                                 onPressed: _showAddItemDialog,
-                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                                child: const Text('Tambah Barang Pertama', style: TextStyle(color: Colors.white)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: const Text('Tambah Barang Pertama', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
                               ),
                             ],
                           ),
@@ -394,12 +533,12 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                       ..._booking.items.map((item) {
                         final isBig = item.type == ItemType.besar;
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
+                          margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.border),
+                            color: const Color(0xFFF8F3EC),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0xFFECE2D5)),
                           ),
                           child: Row(
                             children: [
@@ -407,13 +546,11 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: isBig ? const Color(0xFFFFF3E0) : const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(10),
+                                  color: isBig ? const Color(0xFFFFEDD5) : const Color(0xFFEFE3D3),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Icon(
-                                  isBig ? Icons.kitchen_outlined : Icons.inventory_2_outlined,
-                                  color: isBig ? const Color(0xFFE65100) : AppColors.primary,
-                                  size: 20,
+                                child: Center(
+                                  child: Text(isBig ? '🛋️' : '📦', style: const TextStyle(fontSize: 18)),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -423,222 +560,239 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                                   children: [
                                     Text(
                                       item.name,
-                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.text),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: isBig ? const Color(0xFFFFF3E0) : const Color(0xFFEFF6FF),
-                                        borderRadius: BorderRadius.circular(4),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                        color: Color(0xFF3B2C24),
                                       ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      isBig ? 'Barang Besar / Elektronik' : 'Barang Kecil / Sedang',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: isBig ? const Color(0xFFC2410C) : const Color(0xFF8C7A70),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Counter Qty
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE0D3C5)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (item.quantity == 1) {
+                                          _removeItem(item);
+                                        } else {
+                                          _updateQuantity(item, -1);
+                                        }
+                                      },
+                                      child: Container(
+                                        width: 26,
+                                        height: 26,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF5EDE4),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          item.quantity == 1 ? Icons.delete_outline : Icons.remove,
+                                          size: 15,
+                                          color: item.quantity == 1 ? AppColors.error : AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 24,
                                       child: Text(
-                                        isBig ? 'Barang Besar / Elektronik' : 'Barang Kecil / Sedang',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: isBig ? const Color(0xFFE65100) : const Color(0xFF1D4ED8),
+                                        '${item.quantity}',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF2E2018),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => _updateQuantity(item, 1),
+                                      child: Container(
+                                        width: 26,
+                                        height: 26,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.add,
+                                          size: 15,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              // Counter - & +
-                              Row(
-                                children: [
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () => _updateQuantity(item, -1),
-                                    icon: const Icon(Icons.remove_circle_outline, size: 20, color: AppColors.textSecondary),
-                                  ),
-                                  Text(
-                                    '${item.quantity}',
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                                  ),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () => _updateQuantity(item, 1),
-                                    icon: const Icon(Icons.add_circle, size: 20, color: AppColors.primary),
-                                  ),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () => _removeItem(item),
-                                    icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 18),
 
-                    // 2. LIVE CLASSIFICATION BADGE CARD
+                    // Pilihan Tipe Durasi (Harian / Mingguan / Bulanan)
+                    const Text(
+                      'Pilihan Durasi Penitipan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF2E2018),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Segmented Tipe Selector
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: cat == 'A'
-                            ? const Color(0xFFF0FDF4)
-                            : (cat == 'B' ? const Color(0xFFFFF7ED) : const Color(0xFFFEF2F2)),
+                        color: const Color(0xFFF1EDE7),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: cat == 'A'
-                              ? const Color(0xFF86EFAC)
-                              : (cat == 'B' ? const Color(0xFFFDBA74) : const Color(0xFFFCA5A5)),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                cat == 'A'
-                                    ? Icons.check_circle_outline
-                                    : (cat == 'B' ? Icons.stars_outlined : Icons.warning_amber_rounded),
-                                size: 18,
-                                color: cat == 'A'
-                                    ? const Color(0xFF15803D)
-                                    : (cat == 'B' ? const Color(0xFFC2410C) : const Color(0xFFB91C1C)),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                cat == 'A'
-                                    ? 'Klasifikasi: Kategori A (Hemat)'
-                                    : (cat == 'B'
-                                        ? 'Klasifikasi: Kategori B (Lengkap / Besar)'
-                                        : 'Klasifikasi: $cat'),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: cat == 'A'
-                                      ? const Color(0xFF15803D)
-                                      : (cat == 'B' ? const Color(0xFFC2410C) : const Color(0xFFB91C1C)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _booking.categoryReason,
-                            style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary, height: 1.35),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    // 3. PILIHAN DURASI PENITIPAN
-                    Text(
-                      'Pilih Durasi Penitipan',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.text,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Tab Pilihan: Harian | Mingguan | Bulanan
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5DDD2)),
                       ),
                       child: Row(
-                        children: [
-                          _buildDurationTab('Harian'),
-                          _buildDurationTab('Mingguan'),
-                          _buildDurationTab('Bulanan'),
-                        ],
+                        children: ['Harian', 'Mingguan', 'Bulanan'].map((type) {
+                          final isSelected = _booking.durationType == type;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _booking.durationType = type;
+                                  _booking.durationCount = 1;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.primary : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(11),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.primary.withOpacity(0.25),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  type,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    color: isSelected ? Colors.white : const Color(0xFF66554B),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                    // Selector Count
+                    // Pilihan Nilai Durasi Berdasarkan Tipe
                     if (_booking.durationType == 'Harian')
-                      _buildCountChips(
-                        label: 'Pilih Jumlah Hari',
+                      _buildDurationOptions(
                         options: [1, 2, 3, 4, 5, 6, 7],
                         suffix: 'Hari',
                       )
                     else if (_booking.durationType == 'Mingguan')
-                      _buildCountChips(
-                        label: 'Pilih Jumlah Minggu',
+                      _buildDurationOptions(
                         options: [1, 2, 3, 4],
                         suffix: 'Minggu',
                       )
                     else
-                      _buildCountChips(
-                        label: 'Pilih Jumlah Bulan',
+                      _buildDurationOptions(
                         options: [1, 2, 3],
                         suffix: 'Bulan',
+                        labels: {
+                          1: '1 Bulan',
+                          2: '2 Bulan',
+                          3: '3 Bulan (Semester)',
+                        },
                       ),
 
                     const SizedBox(height: 16),
 
-                    // CARD RINCIAN HARGA PAKET RESMI
+                    // Benefit Gudang KosinAja Mini Card
                     Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
+                        color: const Color(0xFFF5EDE4).withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE8DACB)),
                       ),
-                      child: Column(
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Tarif Paket Kategori $cat (${_booking.durationCount} ${_booking.durationType})',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                currencyFormat.format(price),
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primary),
-                              ),
+                              Text('🛡️', style: TextStyle(fontSize: 13)),
+                              SizedBox(width: 4),
+                              Text('Asuransi Resmi', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF3B2C24))),
                             ],
                           ),
-                          const Divider(height: 16),
+                          Text('•', style: TextStyle(color: Color(0xFFD4C2B0))),
                           Row(
                             children: [
-                              const Icon(Icons.info_outline, size: 14, color: AppColors.textMuted),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  cat == 'A'
-                                      ? 'Maks 3 barang kecil • Bebas biaya per item'
-                                      : 'Barang >3 item / Elektronik & Besar • Bebas biaya per item',
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                                ),
-                              ),
+                              Text('📹', style: TextStyle(fontSize: 13)),
+                              SizedBox(width: 4),
+                              Text('CCTV 24/7', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF3B2C24))),
+                            ],
+                          ),
+                          Text('•', style: TextStyle(color: Color(0xFFD4C2B0))),
+                          Row(
+                            children: [
+                              Text('🚚', style: TextStyle(fontSize: 13)),
+                              SizedBox(width: 4),
+                              Text('Jemput ke Kos', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF3B2C24))),
                             ],
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
             ),
 
-            // 4. STICKY BOTTOM CHECKOUT BAR
+            // Sticky Bottom Checkout Bar (Melayang di atas Bottom Nav Bar)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFFDFBF8),
+                border: const Border(
+                  top: BorderSide(color: Color(0xFFEDE5DA)),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
                   ),
                 ],
               ),
@@ -650,39 +804,49 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Paket Kategori $cat • ${_booking.durationCount} ${_booking.durationType}',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          'Subtotal Kat. $cat (${_booking.durationCount} ${_booking.durationType})',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF8C7A70),
+                          ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           currencyFormat.format(price),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.text,
+                            color: Color(0xFFB86B35),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _proceedToStep2,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ElevatedButton(
+                    onPressed: _proceedToStep2,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB86B35),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Lanjut', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                          SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, size: 16),
-                        ],
-                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Lanjut Jadwal',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      ],
                     ),
                   ),
                 ],
@@ -691,84 +855,93 @@ class _BookingStep1ScreenState extends State<BookingStep1Screen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDurationTab(String title) {
-    final isSelected = _booking.durationType == title;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _booking.durationType = title;
-            _booking.durationCount = 1;
-          });
+      // Persistent Bottom Navigation Bar (Tab Booking Selalu Aktif)
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/orders');
+          } else if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/profile');
+          }
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        items: const [
+          BottomNavigationBarItem(
+            icon: ImageIcon(AssetImage('assets/images/icon_home.png')),
+            activeIcon: ImageIcon(AssetImage('assets/images/icon_home_active.png')),
+            label: 'Beranda',
           ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            activeIcon: Icon(Icons.inventory_2),
+            label: 'Booking',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_outlined),
+            activeIcon: Icon(Icons.local_shipping),
+            label: 'Riwayat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle),
+            label: 'Profil',
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCountChips({
-    required String label,
+  Widget _buildDurationOptions({
     required List<int> options,
     required String suffix,
+    Map<int, String>? labels,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: options.map((val) {
-            final isSelected = _booking.durationCount == val;
-            return ChoiceChip(
-              label: Text('$val $suffix'),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _booking.durationCount = val;
-                  });
-                }
-              },
-              selectedColor: AppColors.primary,
-              backgroundColor: Colors.white,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : AppColors.text,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((val) {
+        final isSelected = _booking.durationCount == val;
+        final displayText = labels != null && labels.containsKey(val) ? labels[val]! : '$val $suffix';
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _booking.durationCount = val;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFFDFBF8) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : const Color(0xFFE5DDD2),
+                width: isSelected ? 1.8 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isSelected ? 0.04 : 0.01),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Text(
+              displayText,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF985322) : const Color(0xFF3B2C24),
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 12,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.border,
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
