@@ -79,9 +79,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String msg = 'Gagal memilih foto: $e';
+        if (e.toString().contains('channel-error') || e.toString().contains('MissingPluginException')) {
+          msg = 'Aplikasi perlu di-restart penuh (stop lalu jalankan ulang flutter run -d infinix) agar modul kamera & galeri terpasang ke HP.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memilih foto: $e'),
+            content: Text(msg),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -851,41 +855,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Stack(
-                    clipBehavior: Clip.antiAlias,
-                    alignment: Alignment.topCenter,
-                    children: [
-                      // Decorative Background Circles (Contained inside card)
-                      Positioned(
-                        top: -20,
-                        right: -20,
-                        child: Container(
-                          width: 110,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primaryFixed.withOpacity(0.4),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -20,
-                        left: -20,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.secondaryContainer.withOpacity(0.35),
-                          ),
-                        ),
-                      ),
-
-                      // Card Content
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                         child: Column(
                           children: [
                             // Avatar with Camera Picker Button
@@ -1078,9 +1049,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
               ),
 
               const SizedBox(height: 16),
