@@ -485,7 +485,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                       SizedBox(width: 8),
-                                      Icon(Icons.arrow_forward_rounded, size: 18),
+                                      Icon(Icons.arrow_forward_ios_rounded, size: 16),
                                     ],
                                   ),
                           ),

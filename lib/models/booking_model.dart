@@ -64,6 +64,16 @@ class BookingData {
   int ongkirPickup;
   int ongkirDelivery;
 
+  // Layanan Pengantaran & Pengemasan
+  String deliveryMethod; // 'JEMPUT_KURIR' atau 'ANTAR_SENDIRI'
+  String packingMethod; // 'PACKING_SENDIRI' atau 'JASA_PACKING'
+  int packingFee; // 15000 jika JASA_PACKING, 0 jika PACKING_SENDIRI
+  double pickupDistanceKm;
+  String pickupHubName;
+  double? userLatitude;
+  double? userLongitude;
+
+
   BookingData({
     List<BookingItem>? items,
     this.durationType = 'Bulanan',
@@ -84,6 +94,14 @@ class BookingData {
     this.metodeDelivery = 'DELIVERY',
     this.ongkirPickup = 15000,
     this.ongkirDelivery = 15000,
+    this.deliveryMethod = 'JEMPUT_KURIR',
+    this.packingMethod = 'PACKING_SENDIRI',
+    this.packingFee = 0,
+    this.pickupDistanceKm = 8.5,
+    this.pickupHubName = 'Gudang Pusat Kosinaja Padang',
+    this.userLatitude,
+    this.userLongitude,
+
   })  : items = items ?? [],
         pickupDate = pickupDate ?? DateTime.now().add(const Duration(days: 1));
 
@@ -172,12 +190,17 @@ class BookingData {
     }
   }
 
+  int get effectiveDeliveryFee => deliveryMethod == 'ANTAR_SENDIRI' ? 0 : deliveryFee;
+
+  int get effectivePackingFee =>
+      (deliveryMethod == 'JEMPUT_KURIR' && packingMethod == 'JASA_PACKING') ? packingFee : 0;
+
   int get discount => 0;
 
   int get grandTotal {
     final sub = storageSubtotal;
     if (sub == 0) return 0;
-    final total = sub + deliveryFee - discount;
+    final total = sub + effectiveDeliveryFee + effectivePackingFee - discount;
     return total > 0 ? total : 0;
   }
 }

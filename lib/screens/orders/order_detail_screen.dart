@@ -80,7 +80,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with SingleTicker
       appBar: AppBar(
         title: Text('Detail Pesanan #${widget.orderCode}', style: const TextStyle(fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [

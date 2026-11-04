@@ -30,6 +30,14 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
     super.initState();
     _booking = widget.bookingData ?? BookingData();
 
+    // Pastikan default nilai logistik
+    if (_booking.deliveryMethod.isEmpty) {
+      _booking.deliveryMethod = 'JEMPUT_KURIR';
+    }
+    if (_booking.packingMethod.isEmpty) {
+      _booking.packingMethod = 'PACKING_SENDIRI';
+    }
+
     // Jika alamat masih kosong, gunakan alamat profil user tersimpan jika ada
     if (_booking.kosAddress.trim().isEmpty) {
       final user = ApiService.currentUser;
@@ -83,6 +91,14 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
   }
 
   void _proceedToStep3() {
+    // Sinkronisasi data logistik dan pengemasan sebelum lanjut
+    if (_booking.metodePickup == 'SELF_DROPOFF') {
+      _booking.deliveryMethod = 'ANTAR_SENDIRI';
+      _booking.deliveryFee = 0;
+    } else {
+      _booking.deliveryMethod = 'JEMPUT_KURIR';
+    }
+
     // Validasi alamat jika metode pickup adalah jemput kurir
     if (_booking.metodePickup == 'PICKUP' && _booking.kosAddress.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,7 +119,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalPayment = _booking.storageSubtotal + _booking.deliveryFee;
+    final totalPayment = _booking.grandTotal;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -145,7 +161,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                           '66%',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.primary,
                           ),
                         ),
@@ -155,17 +171,11 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Container(height: 6, color: AppColors.primary),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: Container(height: 6, color: AppColors.surfaceContainerHigh),
-                        ),
-                      ],
+                    child: const LinearProgressIndicator(
+                      value: 0.66,
+                      backgroundColor: AppColors.border,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      minHeight: 6,
                     ),
                   ),
                 ],
@@ -179,12 +189,63 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Widget Interaktif Pemilihan Lokasi & Logistik OSM (seperti LocationPicker.tsx)
+                    // Widget Interaktif Pemilihan Lokasi & Logistik OSM (OpenStreetMap)
                     LocationPickerWidget(
                       booking: _booking,
                       onLocationChanged: (result) {
                         setState(() {
-                          // Memperbarui UI total estimasi di bottom bar secara realtime
+                          _booking.pickupDistanceKm = result.kalkulasi.jarakKm;
+                          _booking.userLatitude = result.coordinate.latitude;
+                          _booking.userLongitude = result.coordinate.longitude;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Opsi Layanan Pengemasan / Packing
+                    const Text(
+                      'Layanan Pengemasan / Packing',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Pilih apakah barang sudah siap atau membutuhkan bantuan packing.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    _buildPackingOption(
+                      icon: '📦',
+                      title: 'Packing Mandiri',
+                      desc: 'Barang sudah dipacking rapi oleh kamu dalam dus/koper.',
+                      price: 'GRATIS',
+                      isSelected: _booking.packingMethod == 'PACKING_SENDIRI',
+                      onTap: () {
+                        setState(() {
+                          _booking.packingMethod = 'PACKING_SENDIRI';
+                          _booking.packingFee = 0;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _buildPackingOption(
+                      icon: '✨',
+                      title: 'Jasa Packing KosinAja',
+                      desc: 'Disediakan kardus tebal, lakban, & bubble wrap oleh kurir.',
+                      price: '+ Rp 15.000',
+                      isSelected: _booking.packingMethod == 'JASA_PACKING',
+                      onTap: () {
+                        setState(() {
+                          _booking.packingMethod = 'JASA_PACKING';
+                          _booking.packingFee = 15000;
                         });
                       },
                     ),
@@ -426,6 +487,81 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPackingOption({
+    required String icon,
+    required String title,
+    required String desc,
+    required String price,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primarySoft.withOpacity(0.25) : AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : const Color(0xFFF0EBE1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                icon,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    desc,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              price,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],
