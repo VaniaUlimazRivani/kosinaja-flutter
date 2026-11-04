@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
+import '../../widgets/xendit_payment_modal.dart';
 
 class BookingStep3Screen extends StatefulWidget {
   final BookingData? bookingData;
@@ -224,11 +225,46 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
     if (result['success'] == true) {
       final bookingData = result['booking'];
+      final bookingId = bookingData?['id']?.toString() ?? '';
       if (bookingData != null && bookingData['kodeBooking'] != null) {
         setState(() {
           _orderCode = bookingData['kodeBooking'];
         });
       }
+
+      // Jika memilih pembayaran online (QRIS / Virtual Account) dan bookingId tersedia
+      if (_selectedPayment != 'COD' && bookingId.isNotEmpty) {
+        setState(() {
+          _isProcessing = true;
+        });
+
+        final invoiceRes = await ApiService.createXenditInvoice(bookingId);
+
+        if (!mounted) return;
+        setState(() {
+          _isProcessing = false;
+        });
+
+        if (invoiceRes['success'] == true && invoiceRes['invoiceUrl'] != null) {
+          final invoiceUrl = invoiceRes['invoiceUrl'].toString();
+
+          await XenditPaymentModal.show(
+            context: context,
+            bookingId: bookingId,
+            kodeBooking: _orderCode,
+            invoiceUrl: invoiceUrl,
+            totalHarga: _booking.grandTotal,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(invoiceRes['error'] ?? 'Invoice Xendit tidak dapat dimuat, pesanan tetap tercatat.'),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
+        }
+      }
+
       _showSuccessModal();
     } else {
       // Jika API server belum aktif/offline, tetap beri feedback modal sukses lokal untuk demo kelancaran user testing
