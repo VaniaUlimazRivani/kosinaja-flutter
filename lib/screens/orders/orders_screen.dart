@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import 'order_detail_screen.dart';
 import '../../widgets/xendit_payment_modal.dart';
 
 class OrderHistoryItem {
@@ -287,43 +288,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.inventory_2_outlined,
-                color: AppColors.primary,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'KosinAja',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-                Text(
-                  'Riwayat Tracking',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: Image.asset(
+          'assets/images/logo_kosinaja.png',
+          height: 32,
+          fit: BoxFit.contain,
         ),
         actions: [
           IconButton(
@@ -716,7 +688,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                             const SizedBox(width: 8),
                             if (isActive)
-                              Row(
+Row(
                                 children: [
                                   if (order.bookingId != null && order.paymentStatus != 'PAID') ...[
                                     OutlinedButton.icon(
@@ -739,7 +711,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   ],
                                   ElevatedButton(
                                     onPressed: () {
-                                      Navigator.pushNamed(context, '/tracking');
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => OrderDetailScreen(
+                                            orderCode: order.orderCode,
+                                            currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
+                                            rawData: {
+                                              'title': order.title,
+                                              'subtitle': order.subtitle,
+                                              'schedule': order.schedule,
+                                            },
+                                          ),
+                                        ),
+                                      );
                                     },
                                     style: ElevatedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -749,7 +734,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     ),
                                     child: const Row(
                                       children: [
-                                        Text('Lacak', style: TextStyle(fontSize: 12)),
+                                        Text('Detail & Lacak', style: TextStyle(fontSize: 12)),
                                         SizedBox(width: 4),
                                         Icon(Icons.arrow_forward, size: 14),
                                       ],
@@ -867,8 +852,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         unselectedItemColor: AppColors.textSecondary,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.cottage_outlined),
-            activeIcon: Icon(Icons.cottage),
+            icon: ImageIcon(AssetImage('assets/images/icon_home.png')),
+            activeIcon: ImageIcon(AssetImage('assets/images/icon_home_active.png')),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(

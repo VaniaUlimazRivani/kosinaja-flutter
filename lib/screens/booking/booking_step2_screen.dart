@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
 import '../../widgets/location_picker_widget.dart';
@@ -29,8 +30,56 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
     super.initState();
     _booking = widget.bookingData ?? BookingData();
 
+    // Jika alamat masih kosong, gunakan alamat profil user tersimpan jika ada
+    if (_booking.kosAddress.trim().isEmpty) {
+      final user = ApiService.currentUser;
+      final userAddr = user?.alamat;
+      if (userAddr != null && userAddr.trim().isNotEmpty) {
+        _booking.kosAddress = userAddr.trim();
+      }
+    }
+
     final now = DateTime.now();
     _availableDates = List.generate(7, (i) => now.add(Duration(days: i + 1)));
+
+    // Pastikan tanggal default masuk ke salah satu list tanggal tersedia
+    if (!_availableDates.any((d) => DateUtils.isSameDay(d, _booking.pickupDate))) {
+      _availableDates.insert(0, _booking.pickupDate);
+    }
+  }
+
+  Future<void> _pickCustomDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _booking.pickupDate.isBefore(now) ? now.add(const Duration(days: 1)) : _booking.pickupDate,
+      firstDate: now.add(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 90)),
+      helpText: 'PILIH TANGGAL PENJEMPUTAN',
+      confirmText: 'PILIH',
+      cancelText: 'BATAL',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.text,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _booking.pickupDate = picked;
+        if (!_availableDates.any((d) => DateUtils.isSameDay(d, picked))) {
+          _availableDates.insert(0, picked);
+        }
+      });
+    }
   }
 
   void _proceedToStep3() {
@@ -130,7 +179,7 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Widget Interaktif Pemilihan Lokasi & Logistik (seperti LocationPicker.tsx)
+                    // Widget Interaktif Pemilihan Lokasi & Logistik OSM (seperti LocationPicker.tsx)
                     LocationPickerWidget(
                       booking: _booking,
                       onLocationChanged: (result) {
@@ -142,14 +191,31 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
 
                     const SizedBox(height: 24),
 
-                    // Tanggal Penjemputan
-                    const Text(
-                      'Pilih Tanggal Penjemputan',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
+                    // Tanggal Penjemputan dengan tombol Kalender
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Pilih Tanggal Penjemputan',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _pickCustomDate,
+                          icon: const Icon(Icons.calendar_month, size: 16, color: AppColors.primary),
+                          label: const Text(
+                            'Pilih di Kalender',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
 
@@ -345,7 +411,10 @@ class _BookingStep2ScreenState extends State<BookingStep2Screen> {
                   ElevatedButton(
                     onPressed: _proceedToStep3,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,

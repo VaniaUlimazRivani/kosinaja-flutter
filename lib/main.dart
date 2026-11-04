@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/services/api_service.dart';
 import 'core/theme/app_theme.dart';
@@ -15,11 +16,20 @@ import 'screens/orders/orders_screen.dart';
 import 'screens/help/help_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
+import 'screens/location/location_shipping_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null);
-  // Pulihkan sesi user & konfigurasi aplikasi dari penyimpanan lokal persisten
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init info: $e');
+  }
+  try {
+    await initializeDateFormatting('id_ID', null);
+  } catch (e) {
+    debugPrint('Locale init info: $e');
+  }
   await ApiService.initSession();
   runApp(const KosinAjaApp());
 }
@@ -57,6 +67,7 @@ class KosinAjaApp extends StatelessWidget {
         '/help': (context) => const HelpScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/notifications': (context) => const NotificationsScreen(),
+        '/location-shipping': (context) => const LocationShippingScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/booking-step2') {
