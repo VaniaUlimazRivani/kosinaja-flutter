@@ -473,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     badgeText: 'Populer',
                     badgeColor: const Color(0xFFB86B35),
                     title: 'Box Standar',
-                    subtitle: 'Mulai Rp 50rb/bln',
+                    subtitle: 'Mulai Rp 10rb/hari',
                     iconBg: const Color(0xFFEFE3D3),
                     onTap: () => Navigator.pushNamed(context, '/booking-step1'),
                   ),
