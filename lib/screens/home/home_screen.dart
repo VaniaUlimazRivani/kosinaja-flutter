@@ -634,8 +634,8 @@ class HomeScreen extends StatelessWidget {
         unselectedItemColor: AppColors.textSecondary,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.cottage_outlined),
-            activeIcon: Icon(Icons.cottage),
+            icon: ImageIcon(AssetImage('assets/images/icon_home.png')),
+            activeIcon: ImageIcon(AssetImage('assets/images/icon_home_active.png')),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
