@@ -38,9 +38,20 @@ class BookingData {
   String kosAddress;
   String kosNote;
   DateTime pickupDate;
-  String pickupSession; // 'Pagi (08:30 - 11:30)', 'Siang (13:00 - 15:30)', 'Sore (16:00 - 18:00)'
+  String pickupSession; // 'Pagi (08:30 - 11:30 WIB)', 'Siang (13:00 - 15:30 WIB)', 'Sore (16:00 - 18:00 WIB)'
   int deliveryFee;
   String paymentMethod;
+
+  // Koordinat & Metode Logistik Lengkap (seperti SafeTitip LocationPicker)
+  double latitude;
+  double longitude;
+  String lokasiNama;
+  double jarakKm;
+  int durasiMenit;
+  String metodePickup; // 'PICKUP' (Dijemput Kurir) | 'SELF_DROPOFF' (Antar ke Hub)
+  String metodeDelivery; // 'DELIVERY' (Diantar Kurir) | 'SELF_PICKUP' (Ambil di Hub)
+  int ongkirPickup;
+  int ongkirDelivery;
 
   BookingData({
     List<BookingItem>? items,
@@ -50,9 +61,18 @@ class BookingData {
     this.kosAddress = 'Kosan Melati, Blok B No. 4, Pasar Baru Pauh',
     this.kosNote = 'Pagar hitam samping warung nasi Ampera',
     DateTime? pickupDate,
-    this.pickupSession = 'Pagi (08:30 - 11:30)',
+    this.pickupSession = 'Pagi (08:30 - 11:30 WIB)',
     this.deliveryFee = 15000,
     this.paymentMethod = 'QRIS',
+    this.latitude = -0.9294,
+    this.longitude = 100.3632,
+    this.lokasiNama = 'Kawasan Kos Pasar Baru (UNAND)',
+    this.jarakKm = 8.5,
+    this.durasiMenit = 20,
+    this.metodePickup = 'PICKUP',
+    this.metodeDelivery = 'DELIVERY',
+    this.ongkirPickup = 15000,
+    this.ongkirDelivery = 15000,
   })  : items = items ?? [],
         pickupDate = pickupDate ?? DateTime.now().add(const Duration(days: 1));
 

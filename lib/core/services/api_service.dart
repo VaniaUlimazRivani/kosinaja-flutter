@@ -616,4 +616,75 @@ class ApiService {
       };
     }
   }
+
+  // ===========================================================================
+  // 5. MAPS, ROUTING & GEOCODING (OSRM & NOMINATIM)
+  // ===========================================================================
+
+  /// Mengambil data rute jalan raya OSRM dan jarak riil (KM) antara 2 titik
+  static Future<Map<String, dynamic>> getRouting({
+    required double originLat,
+    required double originLng,
+    required double destLat,
+    required double destLng,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/routing?originLat=$originLat&originLng=$originLng&destLat=$destLat&destLng=$destLng',
+    );
+
+    try {
+      final response = await http.get(url, headers: headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'distanceKm': (data['distanceKm'] as num?)?.toDouble() ?? 0.0,
+          'durationMin': (data['durationMin'] as num?)?.toInt() ?? 5,
+          'isRealRoute': data['isRealRoute'] == true,
+          'coordinates': data['coordinates'] is List ? data['coordinates'] : [],
+        };
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Routing error: $e');
+    }
+
+    return {'success': false};
+  }
+
+  /// Mencari tempat atau alamat di Padang melalui geocoding API
+  static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
+    if (query.trim().length < 3) return [];
+    final url = Uri.parse('$baseUrl/geocode?q=${Uri.encodeComponent(query.trim())}');
+
+    try {
+      final response = await http.get(url, headers: headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Search places error: $e');
+    }
+
+    return [];
+  }
+
+  /// Reverse geocoding koordinat Lat/Lng menjadi nama tempat & alamat di Padang
+  static Future<Map<String, dynamic>?> reverseGeocode(double lat, double lng) async {
+    final url = Uri.parse('$baseUrl/geocode?lat=$lat&lng=$lng');
+
+    try {
+      final response = await http.get(url, headers: headers).timeout(requestTimeout);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Reverse geocode error: $e');
+    }
+
+    return null;
+  }
 }

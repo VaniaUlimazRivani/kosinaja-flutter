@@ -336,7 +336,10 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
       'nama': user?.nama ?? 'Mahasiswa KosinAja',
       'noWa': (user != null && user.noWa.isNotEmpty) ? user.noWa : '081234567890',
       'alamat': _booking.kosAddress,
-      'lokasiPickup': _booking.kosAddress,
+      'lokasiPickup': _booking.lokasiNama.isNotEmpty
+          ? '${_booking.lokasiNama} - ${_booking.kosAddress}'
+          : _booking.kosAddress,
+      'catatan': _booking.kosNote,
       'tanggalPickup': _booking.pickupDate.toIso8601String(),
       'items': activeItems.isNotEmpty
           ? activeItems
@@ -348,11 +351,15 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
           ? 'BULAN'
           : (_booking.durationType == 'Mingguan' ? 'MINGGU' : 'HARI'),
       'durasiNilai': _booking.durationCount,
-      'metodePickup': 'PICKUP',
-      'metodeDelivery': 'DELIVERY',
+      'metodePickup': _booking.metodePickup,
+      'metodeDelivery': _booking.metodeDelivery,
       'metodePembayaran': _selectedPayment,
-      'latitude': -0.9294,
-      'longitude': 100.3632,
+      'latitude': _booking.latitude,
+      'longitude': _booking.longitude,
+      'jarakKm': _booking.jarakKm,
+      'ongkirPickup': _booking.ongkirPickup,
+      'ongkirDelivery': _booking.ongkirDelivery,
+      'totalOngkir': _booking.deliveryFee,
     };
 
     final result = await ApiService.createBooking(payload);
@@ -638,11 +645,62 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Alamat: ${_booking.kosAddress}',
+                            'Lokasi: ${_booking.lokasiNama} (${_booking.jarakKm.toStringAsFixed(1)} km dari Hub)',
                             style: const TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.text,
                             ),
+                          ),
+                          if (_booking.kosAddress.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Alamat: ${_booking.kosAddress}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Penjemputan:',
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                              Text(
+                                _booking.metodePickup == 'SELF_DROPOFF'
+                                    ? 'Antar Mandiri ke Hub'
+                                    : 'Dijemput Armada KosinAja',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Pengembalian:',
+                                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                              Text(
+                                _booking.metodeDelivery == 'SELF_PICKUP'
+                                    ? 'Ambil Mandiri di Hub'
+                                    : 'Diantar Armada ke Kosan',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -720,8 +778,11 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           ),
                           const SizedBox(height: 8),
                           _buildCostRow(
-                            'Ongkos Antar-Jemput Kos',
-                            currencyFormat.format(_booking.deliveryFee),
+                            'Ongkos Antar-Jemput (${_booking.jarakKm.toStringAsFixed(1)} km)',
+                            _booking.deliveryFee == 0
+                                ? 'GRATIS'
+                                : currencyFormat.format(_booking.deliveryFee),
+                            isGreen: _booking.deliveryFee == 0,
                           ),
                           const SizedBox(height: 8),
                           _buildCostRow(
