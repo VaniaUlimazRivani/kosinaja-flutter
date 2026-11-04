@@ -288,9 +288,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
         title: Image.asset(
           'assets/images/logo_kosinaja.png',
-          height: 30,
+          height: 32,
           fit: BoxFit.contain,
         ),
         actions: [
