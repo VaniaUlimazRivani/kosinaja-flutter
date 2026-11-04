@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -54,12 +55,32 @@ class _XenditPaymentModalState extends State<XenditPaymentModal> {
   int _loadingProgress = 0;
   bool _isLoading = true;
   bool _isCheckingStatus = false;
+  Timer? _statusPollingTimer;
   final _currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   @override
   void initState() {
     super.initState();
     _initWebViewController();
+    _startStatusPolling();
+  }
+
+  void _startStatusPolling() {
+    // Polling status pembayaran otomatis ke server setiap 3 detik
+    _statusPollingTimer?.cancel();
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        _checkPaymentStatus(autoCloseOnSuccess: true);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusPollingTimer?.cancel();
+    super.dispose();
   }
 
   void _initWebViewController() {
@@ -117,6 +138,7 @@ class _XenditPaymentModalState extends State<XenditPaymentModal> {
 
       final status = (res['paymentStatus'] ?? '').toString().toUpperCase();
       if (status == 'PAID' || status == 'SETTLEMENT') {
+        _statusPollingTimer?.cancel();
         if (widget.onSuccess != null) widget.onSuccess!();
         Navigator.pop(context, true); // Return true = Lunas
       } else {
