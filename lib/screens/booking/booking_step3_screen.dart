@@ -992,7 +992,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFFF9F5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.primary.withOpacity(0.35), width: 1.5),
         boxShadow: [
@@ -1028,7 +1028,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                   ),
                   const SizedBox(width: 8),
                   const Text(
-                    'KosinAja Padang',
+                    'QRIS Dinamis Resmi Xendit',
                     style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.text),
                   ),
                 ],
@@ -1041,63 +1041,41 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.timer_outlined, size: 12, color: AppColors.primary),
+                    Icon(Icons.bolt, size: 12, color: AppColors.primary),
                     SizedBox(width: 4),
-                    Text('15:00', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    Text('Auto-Update', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          // Barcode QRIS Asli
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: const Color(0xFFF0E6DA)),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=00020101021226590014ID.LINKAJA.WWW011893600911002220790202150821234567895204541153033605406${_booking.grandTotal}5802ID5914KOSINAJA%20PADANG6006PADANG6304',
-                width: 190,
-                height: 190,
-                fit: BoxFit.contain,
-                loadingBuilder: (ctx, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    width: 190,
-                    height: 190,
-                    color: Colors.grey.shade50,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                    ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Container(
-                  width: 190,
-                  height: 190,
-                  color: Colors.grey.shade50,
-                  child: const Center(
-                    child: Icon(Icons.qr_code_2, size: 130, color: AppColors.text),
-                  ),
+            child: Column(
+              children: [
+                const Icon(Icons.qr_code_scanner_rounded, size: 52, color: AppColors.primary),
+                const SizedBox(height: 10),
+                const Text(
+                  'Klik Tombol "Bayar Sekarang via QRIS" di Bawah',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.text),
                 ),
-              ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Pop-up QRIS resmi Xendit akan langsung terbuka di layar HP Anda. Begitu pembayaran selesai, sistem otomatis mendeteksi dan langsung mengubah status jadi Lunas!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary, height: 1.4),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'NMID: ID102438910283',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            currencyFormat.format(_booking.grandTotal),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
-          ),
-          const Divider(height: 20),
+          const SizedBox(height: 12),
           const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1106,8 +1084,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
               Flexible(
                 child: Text(
                   'BCA, Mandiri, BRI, BSI, Bank Nagari, GoPay, OVO, ShopeePay',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFF2E7D32), fontWeight: FontWeight.w600),
                 ),
               ),
             ],
