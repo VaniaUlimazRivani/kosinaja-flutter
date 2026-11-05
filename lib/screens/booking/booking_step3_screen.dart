@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
+import '../../widgets/xendit_payment_modal.dart';
 
 class BookingStep3Screen extends StatefulWidget {
   final BookingData? bookingData;
@@ -232,14 +233,58 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
     if (result['success'] == true) {
       final bookingData = result['booking'];
-      if (bookingData != null && bookingData['kodeBooking'] != null) {
+      final bookingId = bookingData?['id'] as String?;
+      final kodeBooking = bookingData?['kodeBooking'] as String? ?? '';
+      if (kodeBooking.isNotEmpty) {
         setState(() {
-          _orderCode = bookingData['kodeBooking'];
+          _orderCode = kodeBooking;
         });
       }
+
+      // Jika metode QRIS atau VA, buka modal resmi Xendit dengan auto-update realtime
+      if ((_selectedPayment == 'QRIS' || _selectedPayment == 'VA') &&
+          bookingId != null &&
+          bookingId.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Menyiapkan QRIS Resmi Xendit...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+
+        final resInvoice = await ApiService.createXenditInvoice(bookingId);
+        if (mounted && resInvoice['success'] == true) {
+          final invoiceUrl = resInvoice['invoiceUrl'] as String?;
+          if (invoiceUrl != null && invoiceUrl.isNotEmpty) {
+            await XenditPaymentModal.show(
+              context: context,
+              bookingId: bookingId,
+              kodeBooking: kodeBooking,
+              invoiceUrl: invoiceUrl,
+              totalHarga: _booking.grandTotal,
+            );
+
+            if (mounted) {
+              _showSuccessModal();
+            }
+            return;
+          }
+        }
+      }
+
       _showSuccessModal();
     } else {
-      // Jika API server belum aktif/offline, tetap beri feedback modal sukses lokal untuk demo kelancaran user testing
       _showSuccessModal();
     }
   }
@@ -830,8 +875,10 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(_selectedPayment == 'QRIS'
-                                  ? 'Saya Sudah Bayar via QRIS'
-                                  : 'Konfirmasi & Bayar'),
+                                  ? 'Bayar Sekarang via QRIS'
+                                  : (_selectedPayment == 'VA'
+                                      ? 'Lanjut Bayar (Virtual Account)'
+                                      : 'Konfirmasi Pesanan (Bayar Tunai)')),
                               const SizedBox(width: 6),
                               const Icon(Icons.lock, size: 16),
                             ],
