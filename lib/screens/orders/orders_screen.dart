@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import 'order_detail_screen.dart';
@@ -57,7 +56,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       schedule: '10 Nov - 10 Des 2026 (Sisa 18 Hari)',
       price: 'Rp 75.000',
       imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCkSax5t-IOo3GycBaJm5HVWgYxgPiX1F_qqzMG-5b0KcaqFt882nCHoz2_drdc88SyG38lZ4KRQdLBeZbCssQNTKyuYayAL0bNiCGbLBLPChtLYbTDacIGP8z1VD4ZD--J1p3YiGdhx66GuvSrmP24auUoJkpqWEiodDAaSk0jLBeENFJXEHu_S6B-Kl_LTNdSO-wu_t1dL3LT1eTLx0KgEpI2KSGTYEwTcNkmHIGHZ7yw7HeBSKC5',
+          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=300&q=80',
     ),
     OrderHistoryItem(
       orderCode: 'STC-0824-112',
@@ -69,7 +68,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       schedule: '15 Agu - 15 Sep 2026 (1 Bulan)',
       price: 'Rp 45.000',
       imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuC5zHvZ2imFQGiCxr9Y8YbtY7cs7Od6kx0EyhZPx3IAel4jeb7GzWLSPCDJ0TIu2wUibB5Fk_YyaRxU_gTFofDtR5ahjh-HapVVljyZUL49XLbXu3x0z5SuGTAdiNVPSoto1zMwbyGtG3_8DzO64_FAJiYAwUHu2CG2a61sbZXybDxTVft-ReoZ_NeXG5IEvz4RslTz0veV0cSsAxrm50DDwTLbyu2Bdb0puKhuNTPdfI-gPNFu4r-J',
+          'https://images.unsplash.com/photo-1534349762230-e0cadf78f5da?auto=format&fit=crop&w=300&q=80',
     ),
     OrderHistoryItem(
       orderCode: 'STC-0511-098',
@@ -81,7 +80,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       schedule: '12 Mei - 12 Jun 2026 (1 Bulan)',
       price: 'Rp 35.000',
       imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAQFzpIJYRUZ5HEequecDrADWd2Io1hfKHWFIMt_YNI4qJ9M1F4xpONIjBpQsB-BF1Whlk2x-n7PGMtGWLg-6xT1_F0tw6G47Wv1VyIgSEDyGpvPB0mYZRrCTx3Icbfa8B5KULpTABw2YPe-vxtnh6fmPPaIvS-k03GN4wEQJJrZjMNlylBmuXJunhz4UsBz7Bk6zWL_KKADPClZY2LU4e1UKCd288TljSAPlQAIPIedXsIUh0rRD6m',
+          'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80',
     ),
   ];
 
@@ -245,6 +244,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     height: 160,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 160,
+                      color: const Color(0xFFF3ECE4),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.inventory_2, size: 48, color: AppColors.primary),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -268,7 +273,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   height: 44,
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Tutup'),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                    child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -286,24 +292,55 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final displayedOrders = _activeTab == 'active' ? activeOrders : completedOrders;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: const Color(0xFFFAF7F2),
         elevation: 0,
         automaticallyImplyLeading: false,
-        titleSpacing: 16,
-        title: Image.asset(
-          'assets/images/logo_kosinaja.png',
-          height: 32,
-          fit: BoxFit.contain,
+        titleSpacing: 20,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Riwayat Penitipan',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF2E2018),
+                letterSpacing: -0.3,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Pantau status barang & arsip penitipanmu',
+              style: TextStyle(
+                fontSize: 11,
+                color: Color(0xFF7A6F68),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.support_agent_outlined),
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFEAE1D5)),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.support_agent_outlined, size: 20, color: AppColors.primary),
+            ),
+            tooltip: 'Pusat Bantuan',
             onPressed: () {
               Navigator.pushNamed(context, '/help');
             },
           ),
+          const SizedBox(width: 14),
         ],
       ),
       body: SafeArea(
@@ -312,530 +349,579 @@ class _OrdersScreenState extends State<OrdersScreen> {
           color: AppColors.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isLoading) const Padding(padding: EdgeInsets.only(bottom: 12), child: LinearProgressIndicator(minHeight: 2)),
-              // Header Context
-              Text(
-                'Riwayat Pesanan',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w800,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: LinearProgressIndicator(
+                      minHeight: 2,
+                      backgroundColor: Color(0xFFFAF7F2),
+                      color: AppColors.primary,
                     ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Daftar titipan aktif dan riwayat sebelumnya',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
+                  ),
 
-              const SizedBox(height: 18),
-
-              // Segmented Tab Filter
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _activeTab = 'active';
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _activeTab == 'active'
-                                ? AppColors.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _activeTab == 'active'
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: 16,
-                                color: _activeTab == 'active'
-                                    ? Colors.white
-                                    : AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Sedang Berjalan (${activeOrders.length})',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: _activeTab == 'active'
-                                      ? Colors.white
-                                      : AppColors.textSecondary,
+                // SEGMENTED TAB FILTER (Home Color Synchronized)
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFE8DF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      // Tab 1: Sedang Berjalan
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _activeTab = 'active';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: _activeTab == 'active' ? AppColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(11),
+                              boxShadow: _activeTab == 'active'
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.25),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '📦 Berjalan',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: _activeTab == 'active' ? Colors.white : const Color(0xFF6D625B),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _activeTab == 'active'
+                                        ? Colors.white.withOpacity(0.25)
+                                        : const Color(0xFFE3D9CD),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${activeOrders.length}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: _activeTab == 'active' ? Colors.white : const Color(0xFF6D625B),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _activeTab = 'completed';
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _activeTab == 'completed'
-                                ? AppColors.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _activeTab == 'completed'
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.task_alt,
-                                size: 16,
-                                color: _activeTab == 'completed'
-                                    ? Colors.white
-                                    : AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Selesai / Riwayat (${completedOrders.length})',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: _activeTab == 'completed'
-                                      ? Colors.white
-                                      : AppColors.textSecondary,
+                      const SizedBox(width: 4),
+
+                      // Tab 2: Selesai / Riwayat
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _activeTab = 'completed';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: _activeTab == 'completed' ? AppColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(11),
+                              boxShadow: _activeTab == 'completed'
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.25),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '✓ Selesai',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: _activeTab == 'completed' ? Colors.white : const Color(0xFF6D625B),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _activeTab == 'completed'
+                                        ? Colors.white.withOpacity(0.25)
+                                        : const Color(0xFFE3D9CD),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${completedOrders.length}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: _activeTab == 'completed' ? Colors.white : const Color(0xFF6D625B),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 18),
+                const SizedBox(height: 14),
 
-              // Orders List Cards
-              Column(
-                children: displayedOrders.map((order) {
-                  final isActive = order.statusType == 'active';
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(14),
+                // ORDERS LIST
+                if (displayedOrders.isEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color: AppColors.cardSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFEFE8DF)),
                     ),
                     child: Column(
                       children: [
-                        // Card Top Row
-                        Row(
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF1E8),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text('📦', style: TextStyle(fontSize: 26)),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _activeTab == 'active' ? 'Belum Ada Titipan Berjalan' : 'Belum Ada Riwayat Selesai',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF2E2018)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _activeTab == 'active'
+                              ? 'Yuk amankan barang kosmu sekarang dengan aman dan terjangkau.'
+                              : 'Semua pesanan penitipan yang telah selesai akan diarsipkan di sini.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF7A6F68), height: 1.3),
+                        ),
+                        if (_activeTab == 'active') ...[
+                          const SizedBox(height: 14),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pushNamed(context, '/booking-step1'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text(
+                              '+ Buat Titipan Baru',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Column(
+                    children: displayedOrders.map((order) {
+                      final isActive = order.statusType == 'active';
+                      final isUnpaid = order.paymentStatus == 'UNPAID';
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFEFE8DF)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFA34E36).withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              isActive ? Icons.inventory_2 : Icons.archive_outlined,
-                              color: isActive ? AppColors.primary : AppColors.secondary,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              order.orderCode,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Text('•', style: TextStyle(color: AppColors.outlineVariant, fontSize: 11)),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                order.date,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? AppColors.secondaryContainer
-                                    : AppColors.surfaceContainerHigh,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isActive) ...[
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.primary,
-                                        shape: BoxShape.circle,
+                            // Card Top Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text('🔖', style: TextStyle(fontSize: 13)),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      order.orderCode,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF2E2018),
+                                        letterSpacing: 0.2,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
+                                    const Text('•', style: TextStyle(color: Color(0xFFD6C8B8), fontSize: 11)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      order.date,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF8C827A), fontWeight: FontWeight.w500),
+                                    ),
                                   ],
-                                  Text(
-                                    order.status,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: isActive
-                                          ? AppColors.onSecondaryContainer
-                                          : AppColors.textSecondary,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                  decoration: BoxDecoration(
+                                    color: isActive ? const Color(0xFFE8F5E9) : const Color(0xFFF3ECE4),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isActive ? const Color(0xFFC8E6C9) : const Color(0xFFE5D9CC),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Card Body
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  order.imageUrl,
-                                  width: 64,
-                                  height: 64,
-                                  fit: BoxFit.cover,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF8C827A),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        order.status,
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: isActive ? const Color(0xFF2E7D32) : const Color(0xFF7A6F68),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Middle Info Row
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    order.imageUrl,
+                                    width: 62,
+                                    height: 62,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 62,
+                                      height: 62,
+                                      color: const Color(0xFFFAF8F5),
+                                      alignment: Alignment.center,
+                                      child: const Text('📦', style: TextStyle(fontSize: 22)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        order.title,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF2E2018),
+                                          height: 1.25,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          const Text('📍', style: TextStyle(fontSize: 11)),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              order.subtitle,
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFF7A6F68)),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                        decoration: BoxDecoration(
+                                          color: isActive ? const Color(0xFFFFF7F2) : const Color(0xFFF7F4EF),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: isActive ? const Color(0xFFFFE2D4) : const Color(0xFFE8E0D5),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(isActive ? '⏳ ' : '✓ ', style: const TextStyle(fontSize: 9.5)),
+                                            Text(
+                                              order.schedule,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: isActive ? AppColors.primary : const Color(0xFF6D625B),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+                            const Divider(height: 1, color: Color(0xFFF5EFE8)),
+                            const SizedBox(height: 10),
+
+                            // Bottom Actions Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      order.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.text,
-                                      ),
+                                      isActive ? 'Total Tagihan' : 'Total Biaya',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF8C827A), fontWeight: FontWeight.w600),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: 1),
                                     Text(
-                                      order.subtitle,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textSecondary,
+                                      order.price,
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isActive ? AppColors.primary : const Color(0xFF5C524C),
                                       ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.schedule,
-                                          size: 13,
-                                          color: isActive ? AppColors.primary : AppColors.textMuted,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            order.schedule,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight:
-                                                  isActive ? FontWeight.w700 : FontWeight.w500,
-                                              color: isActive ? AppColors.primary : AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Card Bottom Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Wrap(
-                                    crossAxisAlignment: WrapCrossAlignment.center,
-                                    spacing: 4,
-                                    runSpacing: 2,
-                                    children: [
-                                      Text(
-                                        isActive ? 'Total Biaya Titip' : 'Total Terbayar',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
+                                Row(
+                                  children: [
+                                    if (isActive && isUnpaid) ...[
+                                      InkWell(
+                                        onTap: () => _payBookingWithXendit(order),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFF1E8),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFFFD9C7)),
+                                          ),
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.payment, size: 13, color: AppColors.primary),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                'Bayar Xendit',
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                      if (order.paymentStatus == 'PAID')
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.successSoft,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Text(
-                                            'Lunas',
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w800,
-                                              color: AppColors.success,
-                                            ),
-                                          ),
-                                        )
-                                      else if (order.bookingId != null && isActive)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFFF3CD),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: const Color(0xFFFFEEBA)),
-                                          ),
-                                          child: const Text(
-                                            'Belum Lunas',
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w800,
-                                              color: Color(0xFF856404),
-                                            ),
-                                          ),
-                                        ),
+                                      const SizedBox(width: 8),
                                     ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    order.price,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                      color: isActive ? AppColors.primary : AppColors.text,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (isActive)
-Row(
-                                children: [
-                                  if (order.bookingId != null && order.paymentStatus != 'PAID') ...[
-                                    OutlinedButton.icon(
-                                      onPressed: () => _payBookingWithXendit(order),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(0xFF0052CC),
-                                        side: const BorderSide(color: Color(0xFF0052CC)),
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      icon: const Icon(Icons.payment, size: 14),
-                                      label: const Text(
-                                        'Bayar Xendit',
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => OrderDetailScreen(
-                                            orderCode: order.orderCode,
-                                            currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
-                                            rawData: {
-                                              'title': order.title,
-                                              'subtitle': order.subtitle,
-                                              'schedule': order.schedule,
-                                            },
+
+                                    if (isActive)
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => OrderDetailScreen(
+                                                orderCode: order.orderCode,
+                                                currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
+                                                rawData: {
+                                                  'title': order.title,
+                                                  'subtitle': order.subtitle,
+                                                  'schedule': order.schedule,
+                                                },
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFF5EE),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFFFD9C7)),
+                                          ),
+                                          child: const Row(
+                                            children: [
+                                              Text(
+                                                'Detail & Lacak',
+                                                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Icon(Icons.arrow_forward_ios_rounded, size: 11, color: AppColors.primary),
+                                            ],
                                           ),
                                         ),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                      )
+                                    else
+                                      InkWell(
+                                        onTap: () => _showCompletedEvidenceModal(order),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFAF8F5),
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(color: const Color(0xFFEAE1D5)),
+                                          ),
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.photo_camera_outlined, size: 14, color: Color(0xFF5C524C)),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                'Bukti Foto Selesai',
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5C524C)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    child: const Row(
-                                      children: [
-                                        Text('Detail & Lacak', style: TextStyle(fontSize: 12)),
-                                        SizedBox(width: 4),
-                                        Icon(Icons.arrow_forward_ios_rounded, size: 12),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else
-                              OutlinedButton.icon(
-                                onPressed: () => _showCompletedEvidenceModal(order),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.text,
-                                  side: const BorderSide(color: AppColors.border),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                  ],
                                 ),
-                                icon: const Icon(Icons.photo_camera_outlined, size: 15),
-                                label: const Text('Bukti Foto Selesai', style: TextStyle(fontSize: 12)),
-                              ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+                      );
+                    }).toList(),
+                  ),
+                ],
 
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              // Promotional CTA Section
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryContainer.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primarySoft),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primarySoft,
-                            borderRadius: BorderRadius.circular(8),
+                // Promotional CTA Section (Home Synced)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7F2),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFFFE0D0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF1E8),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text('📦', style: TextStyle(fontSize: 20)),
                           ),
-                          child: const Icon(Icons.luggage, color: AppColors.primary, size: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Butuh simpan barang tambahan?',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.text,
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Butuh simpan barang tambahan?',
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF2E2018),
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Amankan barang kosmu selama libur semester tanpa pusing bayar sewa penuh.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                  height: 1.35,
+                                SizedBox(height: 2),
+                                Text(
+                                  'Amankan barang kosmu selama liburan tanpa pusing bayar sewa penuh.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF7A6F68),
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/booking-step1');
-                        },
-                        icon: const Icon(Icons.add_box_outlined, size: 18),
-                        label: const Text('+ Titip Barang Baru', style: TextStyle(fontSize: 13)),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/booking-step1');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                          label: const Text(
+                            'Titip Barang Baru',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
-    ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 2, // Riwayat tab
         onTap: (index) {
@@ -848,13 +934,17 @@ Row(
           }
         },
         type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
+        unselectedItemColor: const Color(0xFF8C827A),
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        elevation: 0,
         items: const [
           BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/images/icon_home.png')),
             activeIcon: ImageIcon(AssetImage('assets/images/icon_home_active.png')),
-            label: 'Beranda',
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2_outlined),

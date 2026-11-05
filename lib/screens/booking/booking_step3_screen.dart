@@ -233,18 +233,16 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
     if (result['success'] == true) {
       final bookingData = result['booking'];
-      final bookingId = bookingData?['id'] as String?;
-      final kodeBooking = bookingData?['kodeBooking'] as String? ?? '';
+      final bookingId = bookingData?['id']?.toString() ?? '';
+      final kodeBooking = bookingData?['kodeBooking']?.toString() ?? '';
       if (kodeBooking.isNotEmpty) {
         setState(() {
           _orderCode = kodeBooking;
         });
       }
 
-      // Jika metode QRIS atau VA, buka modal resmi Xendit dengan auto-update realtime
-      if ((_selectedPayment == 'QRIS' || _selectedPayment == 'VA') &&
-          bookingId != null &&
-          bookingId.isNotEmpty) {
+      // Jika memilih pembayaran online (QRIS / Virtual Account) dan bookingId tersedia
+      if (_selectedPayment != 'COD' && bookingId.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
@@ -255,7 +253,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 ),
                 SizedBox(width: 12),
-                Text('Menyiapkan QRIS Resmi Xendit...'),
+                Text('Menyiapkan pembayaran resmi Xendit...'),
               ],
             ),
             duration: Duration(seconds: 2),
@@ -265,12 +263,12 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
         final resInvoice = await ApiService.createXenditInvoice(bookingId);
         if (mounted && resInvoice['success'] == true) {
-          final invoiceUrl = resInvoice['invoiceUrl'] as String?;
+          final invoiceUrl = resInvoice['invoiceUrl']?.toString();
           if (invoiceUrl != null && invoiceUrl.isNotEmpty) {
             await XenditPaymentModal.show(
               context: context,
               bookingId: bookingId,
-              kodeBooking: kodeBooking,
+              kodeBooking: _orderCode,
               invoiceUrl: invoiceUrl,
               totalHarga: _booking.grandTotal,
             );
@@ -280,6 +278,13 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
             }
             return;
           }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(resInvoice['error'] ?? 'Invoice Xendit tidak dapat dimuat, pesanan tetap tercatat.'),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
         }
       }
 

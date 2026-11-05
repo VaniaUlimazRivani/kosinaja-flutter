@@ -725,14 +725,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 46,
                         child: ElevatedButton(
                           onPressed: () async {
+                            final nav = Navigator.of(context);
                             await ApiService.logout();
-                            if (!context.mounted) return;
-                            Navigator.pop(context);
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/login',
-                              (route) => false,
-                            );
+                            if (!mounted) return;
+                            nav.pushNamedAndRemoveUntil('/login', (route) => false);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.error,
@@ -766,13 +762,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface.withOpacity(0.95),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Image.asset(
-          'assets/images/logo_kosinaja.png',
-          height: 32,
-          fit: BoxFit.contain,
+        titleSpacing: 20,
+        title: const Text(
+          'Profil Saya',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2E2018),
+            letterSpacing: -0.3,
+          ),
         ),
         actions: [
           IconButton(
