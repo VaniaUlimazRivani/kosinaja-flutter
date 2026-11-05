@@ -202,13 +202,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final User? firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        ApiService.currentUser = ApiUser(
+        final registeredUser = ApiUser(
           id: firebaseUser.uid,
           nama: firebaseUser.displayName ?? googleUser.displayName ?? 'Mahasiswa KosinAja',
           email: firebaseUser.email ?? googleUser.email,
           noWa: firebaseUser.phoneNumber ?? '081234567890',
           alamat: 'Kota Padang, Sumatera Barat',
         );
+        await ApiService.saveSession(registeredUser);
 
         if (!mounted) return;
 

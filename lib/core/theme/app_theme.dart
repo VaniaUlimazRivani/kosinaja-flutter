@@ -93,6 +93,13 @@ class AppTheme {
           fontWeight: FontWeight.w700,
         ),
       ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (BuildContext context) => const Icon(
+          Icons.arrow_back_ios_new,
+          size: 20,
+          color: AppColors.text,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,

@@ -190,10 +190,19 @@ class BookingData {
     }
   }
 
-  int get effectiveDeliveryFee => deliveryMethod == 'ANTAR_SENDIRI' ? 0 : deliveryFee;
+  int get effectiveDeliveryFee {
+    int total = 0;
+    if (metodePickup == 'PICKUP') {
+      total += ongkirPickup;
+    }
+    if (metodeDelivery == 'DELIVERY') {
+      total += ongkirDelivery;
+    }
+    return total;
+  }
 
   int get effectivePackingFee =>
-      (deliveryMethod == 'JEMPUT_KURIR' && packingMethod == 'JASA_PACKING') ? packingFee : 0;
+      (metodePickup == 'PICKUP' && packingMethod == 'JASA_PACKING') ? packingFee : 0;
 
   int get discount => 0;
 

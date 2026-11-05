@@ -4,6 +4,7 @@ import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/booking_model.dart';
 import '../../widgets/xendit_payment_modal.dart';
+import '../../core/services/booking_storage_service.dart';
 
 class BookingStep3Screen extends StatefulWidget {
   final BookingData? bookingData;
@@ -125,7 +126,14 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(ctx);
-                      Navigator.pushNamed(context, '/tracking');
+                      Navigator.pushNamed(
+                        context,
+                        '/tracking',
+                        arguments: {
+                          'orderCode': _orderCode,
+                          'booking': _booking,
+                        },
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -239,6 +247,8 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
         });
       }
 
+      await _saveBookingToDatabase(bookingId);
+
       // Jika memilih pembayaran online (QRIS / Virtual Account) dan bookingId tersedia
       if (_selectedPayment != 'COD' && bookingId.isNotEmpty) {
         setState(() {
@@ -274,9 +284,46 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
 
       _showSuccessModal();
     } else {
+      await _saveBookingToDatabase('');
       // Jika API server belum aktif/offline, tetap beri feedback modal sukses lokal untuk demo kelancaran user testing
       _showSuccessModal();
     }
+  }
+
+  Future<void> _saveBookingToDatabase(String bookingId) async {
+    final user = ApiService.currentUser;
+    final userName = (user != null && user.nama.isNotEmpty) ? user.nama : 'Pelanggan KosinAja';
+    final userPhone = (user != null && user.noWa.isNotEmpty) ? user.noWa : '082169393475';
+
+    final activeItems = _booking.items.where((i) => i.quantity > 0).toList();
+    final itemsStr = activeItems.map((i) => '${i.quantity}x ${i.name}').join(', ');
+    final priceStr = currencyFormat.format(_booking.grandTotal);
+
+    await BookingStorageService.saveOrder({
+      'orderCode': _orderCode,
+      'bookingId': bookingId,
+      'nama': userName,
+      'noWa': userPhone,
+      'userId': user?.id,
+      'title': itemsStr.isNotEmpty ? itemsStr : 'Barang Titipan Mahasiswa',
+      'subtitle': 'Kategori ${_booking.category} • Hub Hotel Ibis Padang',
+      'kategori': _booking.category,
+      'status': 'Menunggu Penjemputan',
+      'statusType': 'active',
+      'paymentStatus': 'PAID',
+      'totalHarga': _booking.grandTotal,
+      'price': priceStr,
+      'date': DateFormat('d MMM yyyy', 'id_ID').format(DateTime.now()),
+      'schedule': '${_booking.durationCount} ${_booking.durationType}',
+      'startDate': _booking.pickupDate.toIso8601String(),
+      'durationCount': _booking.durationCount,
+      'durationType': _booking.durationType,
+      'pickupSession': _booking.pickupSession,
+      'metodePickup': _booking.metodePickup,
+      'metodeDelivery': _booking.metodeDelivery,
+      'paymentMethod': _selectedPayment,
+      'items': activeItems.map((i) => {'nama': i.name, 'jumlah': i.quantity, 'tipe': i.type.name}).toList(),
+    });
   }
 
   String _formatFullDate(DateTime date) {
@@ -305,7 +352,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Ringkasan & Bayar',
+          'Booking Penitipan',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -364,7 +411,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Container(
                           height: 5,
@@ -374,7 +421,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Container(
                           height: 5,
@@ -850,7 +897,13 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                   ElevatedButton(
                     onPressed: _isProcessing ? null : _handlePay,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      backgroundColor: const Color(0xFFB86B35),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                     ),
                     child: _isProcessing
                         ? const SizedBox(
@@ -865,10 +918,15 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(_selectedPayment == 'QRIS'
-                                  ? 'Saya Sudah Bayar via QRIS'
-                                  : 'Konfirmasi & Bayar'),
+                                  ? 'Bayar Sekarang'
+                                  : 'Konfirmasi Booking',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(width: 6),
-                              const Icon(Icons.lock, size: 16),
+                              const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                             ],
                           ),
                   ),
@@ -939,7 +997,7 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
                         ),
                       ),
                       if (isRecommended) ...[
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(

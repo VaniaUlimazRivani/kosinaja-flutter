@@ -79,10 +79,22 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         : 'Kawasan Kos Pasar Baru (UNAND)';
     _addressCtrl.text = widget.booking.kosAddress;
     _noteCtrl.text = widget.booking.kosNote;
-    _metodePickup = widget.booking.metodePickup;
-    _metodeDelivery = widget.booking.metodeDelivery;
+    _metodePickup = widget.booking.metodePickup.isNotEmpty ? widget.booking.metodePickup : 'PICKUP';
+    _metodeDelivery = widget.booking.metodeDelivery.isNotEmpty ? widget.booking.metodeDelivery : 'DELIVERY';
 
-    _calculateAndRoute(isInitial: true);
+    // Inisialisasi awal kalkulasi lokal
+    _ongkirResult = kalkulasiOngkirLengkap(
+      destLat: _selectedPoint.latitude,
+      destLng: _selectedPoint.longitude,
+      kategori: widget.booking.items.isNotEmpty ? widget.booking.items.first.category : 'A',
+      metodePickup: _metodePickup,
+      metodeDelivery: _metodeDelivery,
+    );
+
+    // Ambil rute OSRM setelah frame pertama agar tidak memicu build conflict
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateAndRoute(isInitial: true);
+    });
   }
 
   @override
@@ -97,7 +109,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
 
   /// Menghitung ongkir dan mengambil rute jalan raya OSRM
   Future<void> _calculateAndRoute({bool isInitial = false}) async {
-    // 1. Kalkulasi dasar cepat lokal (Haversine + tabel resmi)
+    // 1. Kalkulasi lokal instan
     final localResult = kalkulasiOngkirLengkap(
       destLat: _selectedPoint.latitude,
       destLng: _selectedPoint.longitude,
@@ -106,10 +118,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
       metodeDelivery: _metodeDelivery,
     );
 
-    setState(() {
-      _ongkirResult = localResult;
-      _isRouting = true;
-    });
+    if (mounted) {
+      setState(() {
+        _ongkirResult = localResult;
+        _isRouting = true;
+      });
+    }
     _notifyParent();
 
     // 2. Ambil rute jalan raya riil dari OSRM backend
@@ -181,17 +195,21 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
     widget.booking.durasiMenit = _ongkirResult.durasiMenit;
 
     if (widget.onLocationChanged != null) {
-      widget.onLocationChanged!(
-        LocationPickerResult(
-          coordinate: _selectedPoint,
-          namaTempat: _selectedPlaceName,
-          alamatDetail: _addressCtrl.text.trim(),
-          patokan: _noteCtrl.text.trim(),
-          metodePickup: _metodePickup,
-          metodeDelivery: _metodeDelivery,
-          kalkulasi: _ongkirResult,
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onLocationChanged!(
+            LocationPickerResult(
+              coordinate: _selectedPoint,
+              namaTempat: _selectedPlaceName,
+              alamatDetail: _addressCtrl.text.trim(),
+              patokan: _noteCtrl.text.trim(),
+              metodePickup: _metodePickup,
+              metodeDelivery: _metodeDelivery,
+              kalkulasi: _ongkirResult,
+            ),
+          );
+        }
+      });
     }
   }
 
@@ -220,7 +238,8 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
       final geo = await ApiService.reverseGeocode(point.latitude, point.longitude);
       if (mounted && geo != null) {
         setState(() {
-          _selectedPlaceName = geo['nama'] ?? 'Titik Lokasi (${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)})';
+          _selectedPlaceName = geo['nama'] ??
+              'Titik Lokasi (${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)})';
           if (_addressCtrl.text.isEmpty && geo['alamatLengkap'] != null) {
             _addressCtrl.text = geo['alamatLengkap'];
           }
@@ -269,9 +288,10 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         final lat = (item['lat'] as num?)?.toDouble();
         final lng = (item['lng'] as num?)?.toDouble();
         if (lat != null && lng != null) {
-          // Hindari duplikasi jika sudah ada di preset
           final isDuplicate = combined.any(
-            (c) => (((c['lat'] as num).toDouble() - lat).abs() < 0.001) && (((c['lng'] as num).toDouble() - lng).abs() < 0.001),
+            (c) =>
+                (((c['lat'] as num).toDouble() - lat).abs() < 0.001) &&
+                (((c['lng'] as num).toDouble() - lng).abs() < 0.001),
           );
           if (!isDuplicate) {
             combined.add({
@@ -297,20 +317,18 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
   Widget build(BuildContext context) {
     final filteredPresets = _selectedPresetCategory == 'Semua'
         ? PRESET_LOKASI_PADANG
-        : PRESET_LOKASI_PADANG
-            .where((p) => p.kategori == _selectedPresetCategory)
-            .toList();
+        : PRESET_LOKASI_PADANG.where((p) => p.kategori == _selectedPresetCategory).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. SEARCH BAR & AUTOCOMPLETE
+        // 1. PENCARIAN ALAMAT & TEMPAT
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _searchFocus.hasFocus ? AppColors.primary : AppColors.border,
+              color: _searchFocus.hasFocus ? AppColors.primary : const Color(0xFFEADBCC),
               width: _searchFocus.hasFocus ? 1.5 : 1,
             ),
             boxShadow: [
@@ -327,6 +345,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 controller: _searchCtrl,
                 focusNode: _searchFocus,
                 onChanged: _onSearchChanged,
+                style: const TextStyle(fontSize: 13, color: AppColors.text),
                 decoration: InputDecoration(
                   hintText: 'Cari kampus, kosan, atau jalan di Padang...',
                   hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMuted),
@@ -362,13 +381,13 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 Container(
                   constraints: const BoxConstraints(maxHeight: 220),
                   decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: AppColors.border)),
+                    border: Border(top: BorderSide(color: Color(0xFFEADBCC))),
                   ),
                   child: ListView.separated(
                     shrinkWrap: true,
                     padding: EdgeInsets.zero,
                     itemCount: _searchSuggestions.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFEADBCC)),
                     itemBuilder: (context, idx) {
                       final item = _searchSuggestions[idx];
                       final isPreset = item['isPreset'] == true;
@@ -376,22 +395,22 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                         dense: true,
                         leading: CircleAvatar(
                           radius: 14,
-                          backgroundColor: isPreset ? AppColors.primarySoft : AppColors.surfaceContainerHigh,
+                          backgroundColor: isPreset ? AppColors.primarySoft : const Color(0xFFFAF2EB),
                           child: Icon(
                             isPreset ? Icons.stars_rounded : Icons.location_on,
                             size: 16,
-                            color: isPreset ? AppColors.primary : AppColors.textSecondary,
+                            color: AppColors.primary,
                           ),
                         ),
                         title: Text(
                           item['nama'] ?? '',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text),
                         ),
                         subtitle: Text(
                           item['alamatLengkap'] ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                         onTap: () {
                           final lat = item['lat'] as double;
@@ -412,20 +431,18 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           ),
         ),
 
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
-        // 2. QUICK PRESET CHIPS PADANG
+        // 2. PRESET AREA POPULER MAHASISWA
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(
-              child: Text(
-                'Preset Populer Mahasiswa',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.text,
-                ),
+            const Text(
+              'Preset Populer Padang',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.text,
               ),
             ),
             Row(
@@ -436,9 +453,9 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                   onTap: () => setState(() => _selectedPresetCategory = cat),
                   child: Container(
                     margin: const EdgeInsets.only(left: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+                      color: isSelected ? AppColors.primary : const Color(0xFFF3ECE4),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -459,7 +476,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         const SizedBox(height: 8),
 
         SizedBox(
-          height: 38,
+          height: 36,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: filteredPresets.length,
@@ -469,12 +486,13 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                   (_selectedPoint.longitude - p.lng).abs() < 0.0005;
 
               return Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.only(right: 6),
                 child: FilterChip(
                   label: Text(p.nama),
                   selected: isSelected,
                   selectedColor: AppColors.primary,
-                  backgroundColor: AppColors.cardSurface,
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   labelStyle: TextStyle(
                     fontSize: 11,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -483,7 +501,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                     side: BorderSide(
-                      color: isSelected ? AppColors.primary : AppColors.border,
+                      color: isSelected ? AppColors.primary : const Color(0xFFEADBCC),
                     ),
                   ),
                   onSelected: (_) {
@@ -499,21 +517,21 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
 
-        // 3. PETA INTERAKTIF FLUTTERMAP DENGAN OPENSTREETMAP
+        // 3. PETA INTERAKTIF OPENSTREETMAP DENGAN RUTE
         Container(
-          height: 240,
+          height: 220,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
+            color: const Color(0xFFFBF8F4),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: const Color(0xFFEADBCC)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -547,10 +565,10 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                     ],
                   ),
 
-                  // Marker Layer: Hub Kosinaja & Titik Pelanggan
+                  // Marker Layer: Central Hub & Kosan User
                   MarkerLayer(
                     markers: [
-                      // 1. Central Hub Kosinaja (Hotel Ibis Padang)
+                      // Hub KosinAja (Hotel Ibis Padang)
                       Marker(
                         point: KOSINAJA_WAREHOUSE.toLatLng,
                         width: 140,
@@ -574,7 +592,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                                 ],
                               ),
                               child: const Text(
-                                '🏨 Hub KosinAja',
+                                '🏨 Hub Hotel Ibis',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -587,31 +605,31 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                         ),
                       ),
 
-                      // 2. Customer Destination Marker (Titik Kosan)
+                      // Titik Kosan User
                       Marker(
                         point: _selectedPoint,
-                        width: 50,
-                        height: 50,
+                        width: 44,
+                        height: 44,
                         alignment: Alignment.topCenter,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 34,
-                              height: 34,
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFFDC2626),
+                                color: const Color(0xFFB86B35),
                                 border: Border.all(color: Colors.white, width: 2.5),
                                 boxShadow: const [
                                   BoxShadow(
-                                    color: Colors.black45,
-                                    blurRadius: 8,
+                                    color: Colors.black38,
+                                    blurRadius: 6,
                                     offset: Offset(0, 3),
                                   ),
                                 ],
                               ),
-                              child: const Icon(Icons.person_pin_circle, color: Colors.white, size: 20),
+                              child: const Icon(Icons.person_pin_circle, color: Colors.white, size: 18),
                             ),
                           ],
                         ),
@@ -621,13 +639,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 ],
               ),
 
-              // Floating Controls di Peta
+              // Floating Map Controls (Zoom In/Out, Re-center)
               Positioned(
-                top: 10,
-                right: 10,
+                top: 8,
+                right: 8,
                 child: Column(
                   children: [
-                    // Zoom In
                     _buildMapIconButton(
                       icon: Icons.add,
                       onTap: () {
@@ -637,8 +654,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                         );
                       },
                     ),
-                    const SizedBox(height: 6),
-                    // Zoom Out
+                    const SizedBox(height: 5),
                     _buildMapIconButton(
                       icon: Icons.remove,
                       onTap: () {
@@ -648,96 +664,62 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                         );
                       },
                     ),
-                    const SizedBox(height: 6),
-                    // Re-center to Customer Pin
+                    const SizedBox(height: 5),
                     _buildMapIconButton(
                       icon: Icons.my_location,
                       color: AppColors.primary,
-                      tooltip: 'Pusatkan ke Kosan',
-                      onTap: () {
-                        _mapController.move(_selectedPoint, 15);
-                      },
-                    ),
-                    const SizedBox(height: 6),
-                    // Re-center to Hub
-                    _buildMapIconButton(
-                      icon: Icons.warehouse_outlined,
-                      tooltip: 'Pusatkan ke Hub Hotel Ibis',
-                      onTap: () {
-                        _mapController.move(KOSINAJA_WAREHOUSE.toLatLng, 15);
-                      },
+                      onTap: () => _mapController.move(_selectedPoint, 15),
                     ),
                   ],
                 ),
               ),
 
-              // Floating Bottom Status Pill (Jarak & Estimasi Waktu)
+              // Floating Bottom Status Pill
               Positioned(
-                bottom: 10,
-                left: 10,
-                right: 10,
+                bottom: 8,
+                left: 8,
+                right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    color: Colors.white.withOpacity(0.96),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFEADBCC)),
                     boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+                      BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
                     ],
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.route, color: AppColors.primary, size: 16),
-                      ),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.route, color: AppColors.primary, size: 15),
+                      const SizedBox(width: 6),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _selectedPlaceName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                            ),
-                            Text(
-                              'Jarak: ${_ongkirResult.jarakKm} km • Est: ~${_ongkirResult.durasiMenit} Menit',
-                              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
-                            ),
-                          ],
+                        child: Text(
+                          '${_selectedPlaceName} • ${_ongkirResult.jarakKm} km',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.text),
                         ),
                       ),
                       if (_isRouting)
                         const SizedBox(
-                          width: 14,
-                          height: 14,
+                          width: 12,
+                          height: 12,
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                         )
                       else
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                           decoration: BoxDecoration(
-                            color: _ongkirResult.jarakKm <= 1.0
-                                ? AppColors.successSoft
-                                : AppColors.primarySoft,
+                            color: const Color(0xFFFAF2EB),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _ongkirResult.jarakKm <= 1.0 ? 'GRATIS' : 'TERCOVER',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: _ongkirResult.jarakKm <= 1.0
-                                  ? AppColors.success
-                                  : AppColors.primary,
+                            'Est: ~${_ongkirResult.durasiMenit} mnt',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -749,48 +731,57 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         const Center(
           child: Text(
-            '💡 Ketuk pada peta untuk menggeser pin lokasi penjemputan Anda',
+            '💡 Ketuk peta atau cari lokasi di atas untuk geser pin kosan',
             style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
-        // 4. METODE LOGISTIK PENJEMPUTAN & PENGANTARAN
+        // 4. METODE LOGISTIK PENJEMPUTAN (BARANG MASUK)
         const Text(
-          'Metode Penjemputan Barang',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text),
+          '1. Penjemputan Awal (Mulai Libur)',
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.text,
+          ),
+        ),
+        const SizedBox(height: 3),
+        const Text(
+          'Pilih cara barang kamu sampai ke Gudang Hub Hotel Ibis',
+          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 8),
 
         Row(
           children: [
             Expanded(
-              child: _buildLogisticsOption(
-                title: 'Jemput ke Kosan',
-                subtitle: 'Driver KosinAja datang ke kos',
-                icon: Icons.local_shipping,
+              child: _buildLogisticsCard(
+                title: 'Jemput ke Kos',
+                subtitle: 'Kurir datang ambil barang',
+                icon: Icons.local_shipping_outlined,
                 isSelected: _metodePickup == 'PICKUP',
-                priceText: _ongkirResult.ongkirPickup == 0
-                    ? 'Gratis'
-                    : currencyFormat.format(_ongkirResult.ongkirPickup),
+                priceLabel: _ongkirResult.ongkirPickup == 0
+                    ? 'Tarif: Gratis Rp 0'
+                    : 'Tarif: ${currencyFormat.format(_ongkirResult.ongkirPickup)}',
                 onTap: () {
                   setState(() => _metodePickup = 'PICKUP');
                   _calculateAndRoute();
                 },
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
-              child: _buildLogisticsOption(
+              child: _buildLogisticsCard(
                 title: 'Antar Sendiri',
-                subtitle: 'Bawa langsung ke Hub Hotel Ibis',
-                icon: Icons.store_mall_directory_outlined,
+                subtitle: 'Bawa ke Hub Hotel Ibis',
+                icon: Icons.storefront_outlined,
                 isSelected: _metodePickup == 'SELF_DROPOFF',
-                priceText: 'Gratis Rp 0',
+                priceLabel: 'Tarif: Gratis Rp 0',
                 onTap: () {
                   setState(() => _metodePickup = 'SELF_DROPOFF');
                   _calculateAndRoute();
@@ -802,37 +793,47 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
 
         const SizedBox(height: 16),
 
+        // 5. METODE PENGEMBALIAN BARANG (BARANG BALIK / SEMESTER BARU)
         const Text(
-          'Metode Pengembalian Saat Liburan Usai',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text),
+          '2. Pengembalian Barang (Semester Baru)',
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.text,
+          ),
+        ),
+        const SizedBox(height: 3),
+        const Text(
+          'Pilih cara pengambilan barang saat kamu kembali ke Padang',
+          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 8),
 
         Row(
           children: [
             Expanded(
-              child: _buildLogisticsOption(
-                title: 'Diantar ke Kosan',
-                subtitle: 'Diantar kembali saat semester baru',
-                icon: Icons.delivery_dining,
+              child: _buildLogisticsCard(
+                title: 'Diantar ke Kos',
+                subtitle: 'Diantar saat semester baru',
+                icon: Icons.delivery_dining_outlined,
                 isSelected: _metodeDelivery == 'DELIVERY',
-                priceText: _ongkirResult.ongkirDelivery == 0
-                    ? 'Gratis'
-                    : currencyFormat.format(_ongkirResult.ongkirDelivery),
+                priceLabel: _ongkirResult.ongkirDelivery == 0
+                    ? 'Tarif: Gratis Rp 0'
+                    : 'Tarif: ${currencyFormat.format(_ongkirResult.ongkirDelivery)}',
                 onTap: () {
                   setState(() => _metodeDelivery = 'DELIVERY');
                   _calculateAndRoute();
                 },
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
-              child: _buildLogisticsOption(
-                title: 'Ambil Sendiri',
-                subtitle: 'Ambil langsung di Hub Gudang',
-                icon: Icons.hail_rounded,
+              child: _buildLogisticsCard(
+                title: 'Ambil di Hub',
+                subtitle: 'Ambil mandiri di Gudang',
+                icon: Icons.person_pin_circle_outlined,
                 isSelected: _metodeDelivery == 'SELF_PICKUP',
-                priceText: 'Gratis Rp 0',
+                priceLabel: 'Tarif: Gratis Rp 0',
                 onTap: () {
                   setState(() => _metodeDelivery = 'SELF_PICKUP');
                   _calculateAndRoute();
@@ -842,15 +843,15 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           ],
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
-        // 5. RINCIAN ONGKIR & ESTIMASI JALUR
+        // 6. RINCIAN BIAYA ONGKIR (MINIMALIS & RAPI)
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.cardSurface,
+            color: const Color(0xFFFAF7F2),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: const Color(0xFFEADBCC)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -860,16 +861,17 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 children: [
                   const Text(
                     'Rincian Biaya Ongkir',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.text),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
+                      color: const Color(0xFFFAF2EB),
                       borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFEADBCC)),
                     ),
                     child: Text(
-                      '${_ongkirResult.jarakKm} km dari Hub',
+                      '${_ongkirResult.jarakKm} km',
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -879,53 +881,37 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              _buildPriceRow(
-                'Ongkir Penjemputan',
+              const SizedBox(height: 8),
+              _buildSummaryRow(
+                'Penjemputan Awal',
                 _metodePickup == 'PICKUP'
                     ? currencyFormat.format(_ongkirResult.ongkirPickup)
                     : 'Antar Mandiri (Rp 0)',
               ),
               const SizedBox(height: 4),
-              _buildPriceRow(
-                'Ongkir Pengantaran Balik',
+              _buildSummaryRow(
+                'Pengembalian Barang',
                 _metodeDelivery == 'DELIVERY'
                     ? currencyFormat.format(_ongkirResult.ongkirDelivery)
                     : 'Ambil Mandiri (Rp 0)',
               ),
-              if (_ongkirResult.jarakKm <= 1.0) ...[
-                const SizedBox(height: 4),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Promo Hub Terdekat (<= 1.0 km)',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF2E7D52), fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'Gratis Ongkir',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF2E7D52), fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ],
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Divider(height: 1, color: AppColors.border),
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Divider(height: 1, color: Color(0xFFEADBCC)),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Total Biaya Ongkir',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.text),
                   ),
                   Text(
                     _ongkirResult.totalOngkir == 0
                         ? 'GRATIS'
                         : currencyFormat.format(_ongkirResult.totalOngkir),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.primary,
                     ),
@@ -936,12 +922,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
-        // 6. FORM ALAMAT LENGKAP & CATATAN PATOKAN
+        // 7. INPUT DETAIL ALAMAT KOSAN & PATOKAN
         const Text(
-          'Alamat Lengkap Kosan & Patokan',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text),
+          'Alamat Detail Kos & Patokan',
+          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.text),
         ),
         const SizedBox(height: 8),
 
@@ -949,23 +935,57 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           controller: _addressCtrl,
           maxLines: 2,
           onChanged: (_) => _notifyParent(),
-          decoration: const InputDecoration(
-            hintText: 'Nama kos, blok, nomor kamar, RT/RW, dan jalan...',
-            prefixIcon: Padding(
+          style: const TextStyle(fontSize: 12.5, color: AppColors.text),
+          decoration: InputDecoration(
+            hintText: 'Nama kos, nomor kamar, blok, jalan...',
+            hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            prefixIcon: const Padding(
               padding: EdgeInsets.only(bottom: 24),
-              child: Icon(Icons.home_work_outlined, color: AppColors.primary),
+              child: Icon(Icons.home_outlined, color: AppColors.primary, size: 20),
             ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEADBCC)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEADBCC)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         TextField(
           controller: _noteCtrl,
           onChanged: (_) => _notifyParent(),
-          decoration: const InputDecoration(
-            hintText: 'Patokan kurir (misal: samping warung nasi, lantai 2 kamar 8)',
-            prefixIcon: Icon(Icons.notes_outlined, color: AppColors.primary),
+          style: const TextStyle(fontSize: 12.5, color: AppColors.text),
+          decoration: InputDecoration(
+            hintText: 'Patokan (misal: samping warung Padang, lantai 2)',
+            hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            prefixIcon: const Icon(Icons.signpost_outlined, color: AppColors.primary, size: 19),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEADBCC)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEADBCC)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ),
       ],
@@ -976,13 +996,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
     required IconData icon,
     required VoidCallback onTap,
     Color color = AppColors.text,
-    String? tooltip,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1))],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -990,51 +1009,63 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(7),
-            child: Icon(icon, size: 18, color: color),
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, size: 16, color: color),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLogisticsOption({
+  Widget _buildLogisticsCard({
     required String title,
     required String subtitle,
     required IconData icon,
     required bool isSelected,
-    required String priceText,
+    required String priceLabel,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primarySoft.withOpacity(0.35)
-              : AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFFFAF2EB) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : const Color(0xFFEADBCC),
             width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : const Color(0xFFF3ECE4),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                  ),
                 ),
                 const Spacer(),
                 Icon(
-                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                  size: 16,
+                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  size: 18,
                   color: isSelected ? AppColors.primary : AppColors.textMuted,
                 ),
               ],
@@ -1043,7 +1074,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 color: AppColors.text,
               ),
@@ -1051,16 +1082,24 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              maxLines: 2,
-              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, height: 1.2),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 6),
-            Text(
-              priceText,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary.withOpacity(0.12) : const Color(0xFFF5EFE9),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                priceLabel,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -1069,12 +1108,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
     );
   }
 
-  Widget _buildPriceRow(String label, String value) {
+  Widget _buildSummaryRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-        Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+        Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.text)),
       ],
     );
   }

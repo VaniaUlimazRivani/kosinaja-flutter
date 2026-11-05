@@ -77,8 +77,13 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
       hasVehicle: widget.hasVehicle,
     );
 
-    widget.onShippingCalculated?.call(_shipping);
-    widget.onLocationChanged?.call(_selectedLocation);
+    // Gunakan postFrameCallback agar pemanggilan setState di parent tidak bentrok saat widget tree sedang di-build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onShippingCalculated?.call(_shipping);
+        widget.onLocationChanged?.call(_selectedLocation);
+      }
+    });
   }
 
   List<PresetLocation> get _filteredPresets {
@@ -117,13 +122,13 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
       description: 'Terdeteksi via sensor GPS perangkat',
     );
 
-    setState(() {
-      _selectedLocation = gpsLocation;
-      _isLoadingGps = false;
-      _recalculate();
-    });
-
     if (mounted) {
+      setState(() {
+        _selectedLocation = gpsLocation;
+        _isLoadingGps = false;
+        _recalculate();
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('📍 Lokasi GPS kos berhasil terdeteksi!'),

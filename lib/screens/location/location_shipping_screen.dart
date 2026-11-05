@@ -225,8 +225,20 @@ class _LocationShippingScreenState extends State<LocationShippingScreen> {
                 category: _category,
                 itemCount: _itemCount,
                 hasVehicle: _hasVehicle,
-                onLocationChanged: (loc) => setState(() => _selectedLocation = loc),
-                onShippingCalculated: (ship) => setState(() => _currentShipping = ship),
+                onLocationChanged: (loc) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() => _selectedLocation = loc);
+                    }
+                  });
+                },
+                onShippingCalculated: (ship) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() => _currentShipping = ship);
+                    }
+                  });
+                },
               ),
 
               const SizedBox(height: 20),

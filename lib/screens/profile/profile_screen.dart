@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/services/booking_storage_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,12 +27,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfileStats() async {
     if (ApiService.currentUser == null) return;
-    final res = await ApiService.getProfile();
+    final orders = await BookingStorageService.getOrders();
+    final active = orders.where((o) => o['statusType'] == 'active').length;
+    final completed = orders.where((o) => o['statusType'] == 'completed').length;
     if (mounted) {
       setState(() {
-        if (res['success'] == true) {
-          _stats = res['stats'];
-        }
+        _stats = {
+          'activeBookings': active,
+          'completedBookings': completed,
+        };
       });
     }
   }
@@ -168,6 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: const Text('Hapus Foto (Gunakan Inisial)', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
                     onTap: () async {
                       Navigator.pop(context);
+
                       final user = ApiService.currentUser;
                       final prefs = await SharedPreferences.getInstance();
                       final key = 'profile_image_${user?.id ?? "local"}';
@@ -202,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Contact WhatsApp launcher helper
   Future<void> _openWhatsAppSupport() async {
-    final uri = Uri.parse('https://wa.me/6282283217789?text=Halo%20Admin%20KosinAja%2C%20saya%20butuh%20bantuan%20terkait%20akun%20mahasiswa%20saya.');
+    final uri = Uri.parse('https://wa.me/6282169393475?text=Halo%20Admin%20KosinAja%20Padang%2C%20saya%20butuh%20bantuan%20terkait%20layanan%20penitipan%20saya.');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -276,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '+62 822-8321-7789',
+                        '+62 821-6939-3475',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -284,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       Text(
-                        'Posko Air Tawar',
+                        'Hub Hotel Ibis Padang',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF2E7D52),
@@ -420,6 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Alamat dapat disesuaikan pada saat pengisian form booking.'),
@@ -428,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                     icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                    label: const Text('Atur Alamat Saat Booking'),
+                    label: const Text('Atur / Ubah Alamat Kos'),
                   ),
                 ),
               ],
@@ -619,15 +625,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 Navigator.pop(context);
 
-                // Update user locally in ApiService
+                // Update user locally & simpan permanen ke SharedPreferences HP
                 if (user != null) {
                   final updated = user.copyWith(
                     nama: newName,
                     noWa: newPhone,
                     alamat: newAddr,
                   );
-                  ApiService.currentUser = updated;
-                  setState(() {});
+                  await ApiService.saveSession(updated);
+                  if (mounted) setState(() {});
                 }
 
                 // Kirim ke backend jika user ID tersedia
@@ -760,9 +766,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userAddress = user?.alamat?.isNotEmpty == true ? user!.alamat! : 'Kota Padang, Sumatera Barat';
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: const Color(0xFFFAF7F2),
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 20,
@@ -825,190 +831,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        child: Column(
-                          children: [
-                            // Avatar with Camera Picker Button
-                            Stack(
-                              children: [
-                                Container(
-                                  width: 96,
-                                  height: 96,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.surfaceContainer,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.08),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(48),
-                                    child: _profileImagePath != null && File(_profileImagePath!).existsSync()
-                                        ? Image.file(
-                                            File(_profileImagePath!),
-                                            fit: BoxFit.cover,
-                                            width: 96,
-                                            height: 96,
-                                          )
-                                        : Container(
-                                            decoration: const BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [Color(0xFFB86B35), Color(0xFF8C4F23)],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              ),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                _getInitials(userName),
-                                                style: const TextStyle(
-                                                  fontSize: 32,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: Colors.white,
-                                                  letterSpacing: 1,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: GestureDetector(
-                                    onTap: _showImagePickerOptions,
-                                    child: Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 4,
-                                            offset: Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.camera_alt,
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
+                  child: Column(
+                    children: [
+                      // Avatar with Camera Picker Button
+                      Stack(
+                        children: [
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.surfaceContainer,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-
-                            const SizedBox(height: 14),
-
-                            // User Name
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.text,
-                                letterSpacing: -0.3,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(48),
+                              child: _profileImagePath != null && File(_profileImagePath!).existsSync()
+                                  ? Image.file(
+                                      File(_profileImagePath!),
+                                      fit: BoxFit.cover,
+                                      width: 96,
+                                      height: 96,
+                                    )
+                                  : Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [Color(0xFFB86B35), Color(0xFF8C4F23)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _getInitials(userName),
+                                          style: const TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _showImagePickerOptions,
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
+                          ),
+                        ],
+                      ),
 
-                            const SizedBox(height: 6),
+                      const SizedBox(height: 14),
 
-                            // Verified Student Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEAF5EE),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFC8E6D2)),
+                      // User Name
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.text,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Verified Student Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF5EE),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFC8E6D2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.verified_user,
+                              color: Color(0xFF2E7D52),
+                              size: 15,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              userAddress,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2E7D52),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Student Storage Summary Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
                                 children: [
-                                  const Icon(
-                                    Icons.verified_user,
-                                    color: Color(0xFF2E7D52),
-                                    size: 15,
-                                  ),
-                                  const SizedBox(width: 6),
                                   Text(
-                                    userAddress,
+                                    '${_stats?['activeBookings'] ?? 0} Titipan',
                                     style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Penitipan Aktif',
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E7D52),
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-
-                            const SizedBox(height: 20),
-
-                            // Student Storage Summary Pill
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
+                              height: 32,
+                              width: 1,
+                              color: AppColors.border,
+                            ),
+                            Expanded(
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          '${_stats?['activeBookings'] ?? 1} Box',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        const Text(
-                                          'Penitipan Aktif',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
+                                  Text(
+                                    '${_stats?['completedBookings'] ?? 0} Selesai',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.secondary,
                                     ),
                                   ),
-                                  Container(
-                                    height: 32,
-                                    width: 1,
-                                    color: AppColors.border,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          '${_stats?['completedBookings'] ?? 3} Kali',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.secondary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        const Text(
-                                          'Selesai Dititip',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Selesai Dititip',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -1017,6 +1020,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -1425,7 +1431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textSecondary, size: 14),
           ],
         ),
       ),

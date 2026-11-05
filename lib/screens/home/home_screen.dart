@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../models/booking_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +45,58 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
+  Future<void> _openWhatsAppAdmin([String? message]) async {
+    final text = message ??
+        'Halo Admin KosinAja Padang, saya ingin konsultasi mengenai penitipan barang / kebutuhan khusus kos saya.';
+    final url = Uri.parse(
+      'https://wa.me/6282169393475?text=${Uri.encodeComponent(text)}',
+    );
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp. Silakan hubungi 0821-6939-3475.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _navigateToBookingWithItem({
+    required String itemName,
+    required ItemType itemType,
+  }) {
+    final initialBooking = BookingData(
+      items: [
+        BookingItem(
+          id: 'item-${DateTime.now().millisecondsSinceEpoch}',
+          name: itemName,
+          type: itemType,
+          quantity: 1,
+        ),
+      ],
+    );
+    Navigator.pushNamed(
+      context,
+      '/booking-step1',
+      arguments: initialBooking,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ApiService.currentUser;
@@ -51,6 +105,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F2),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openWhatsAppAdmin(),
+        backgroundColor: const Color(0xFF25D366),
+        elevation: 4,
+        shape: const CircleBorder(),
+        tooltip: 'Chat WhatsApp CS',
+        child: const Icon(
+          Icons.chat_bubble_rounded,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -429,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 22),
 
-              // 4. Quick Cute Service Cards (Grid 2x2 Lucu)
+              // 4. Quick Cute Service Cards (Grid 2x2 Lucu & Berfungsi Nyata)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -467,24 +533,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisSpacing: 12,
                 childAspectRatio: 1.35,
                 children: [
+                  // 1. Box Standar (Kategori A)
                   _buildServiceCard(
                     context: context,
                     iconEmoji: '📦',
-                    badgeText: 'Populer',
-                    badgeColor: const Color(0xFFB86B35),
+                    badgeText: 'Kategori A',
+                    badgeColor: const Color(0xFF15803D),
                     title: 'Box Standar',
                     subtitle: 'Mulai Rp 10rb/hari',
                     iconBg: const Color(0xFFEFE3D3),
-                    onTap: () => Navigator.pushNamed(context, '/booking-step1'),
+                    onTap: () => _navigateToBookingWithItem(
+                      itemName: 'Dus Pakaian & Buku',
+                      itemType: ItemType.kecil,
+                    ),
                   ),
+
+                  // 2. Barang Besar (Kategori B)
                   _buildServiceCard(
                     context: context,
                     iconEmoji: '🛋️',
+                    badgeText: 'Kategori B',
+                    badgeColor: const Color(0xFFC2410C),
                     title: 'Barang Besar',
                     subtitle: 'Kasur, Kulkas, Kipas',
-                    iconBg: const Color(0xFFEFE3D3),
-                    onTap: () => Navigator.pushNamed(context, '/booking-step1'),
+                    iconBg: const Color(0xFFFFEDD5),
+                    onTap: () => _navigateToBookingWithItem(
+                      itemName: 'Kulkas Mini / Elektronik',
+                      itemType: ItemType.besar,
+                    ),
                   ),
+
+                  // 3. Cek Ongkir (Peta Rute Padang)
                   _buildServiceCard(
                     context: context,
                     iconEmoji: '🗺️',
@@ -495,18 +574,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconBg: const Color(0xFFEAE2F2),
                     onTap: () => Navigator.pushNamed(context, '/location-shipping'),
                   ),
+
+                  // 4. Titip Kendaraan (Kategori Custom)
                   _buildServiceCard(
                     context: context,
-                    iconEmoji: '🚚',
-                    title: 'Jemput Langsung',
-                    subtitle: 'Kurir ke tempat kamu',
-                    iconBg: const Color(0xFFE1EFE6),
-                    onTap: () => Navigator.pushNamed(context, '/booking-step1'),
+                    iconEmoji: '🛵',
+                    badgeText: 'Khusus',
+                    badgeColor: const Color(0xFFB86B35),
+                    title: 'Titip Kendaraan',
+                    subtitle: 'Motor & partai besar',
+                    iconBg: const Color(0xFFF3ECE4),
+                    onTap: () => _navigateToBookingWithItem(
+                      itemName: 'Sepeda Motor (Matic/Bebek)',
+                      itemType: ItemType.custom,
+                    ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
           ),
         ),

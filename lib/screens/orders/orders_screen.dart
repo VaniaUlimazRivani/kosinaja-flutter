@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import '../../core/services/api_service.dart';
 import '../../core/theme/app_colors.dart';
 import 'order_detail_screen.dart';
+import '../tracking/tracking_screen.dart';
 import '../../widgets/xendit_payment_modal.dart';
+import '../../core/services/booking_storage_service.dart';
 
 class OrderHistoryItem {
   final String? bookingId;
@@ -45,6 +47,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _isLoading = false;
   List<OrderHistoryItem> _orders = [];
 
+  static const String _defaultItemImage =
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=300&q=80';
   static const List<OrderHistoryItem> _defaultOrders = [
     OrderHistoryItem(
       orderCode: 'STC-1310-367',
@@ -87,13 +91,38 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    _orders = List.from(_defaultOrders);
+    _orders = [];
     _fetchOrders();
   }
 
   Future<void> _fetchOrders() async {
     setState(() => _isLoading = true);
     try {
+      final localOrders = await BookingStorageService.getOrders();
+      List<OrderHistoryItem> combined = [];
+      if (localOrders.isNotEmpty) {
+        combined = localOrders.map((o) {
+          final isDone = o['statusType'] == 'completed';
+          return OrderHistoryItem(
+            bookingId: o['bookingId'],
+            orderCode: o['orderCode'] ?? o['kodeBooking'] ?? 'KOS-0000',
+            date: o['date'] ?? DateFormat('d MMM yyyy', 'id_ID').format(DateTime.now()),
+            status: o['status'] ?? 'Menunggu Penjemputan',
+            statusType: isDone ? 'completed' : 'active',
+            paymentStatus: (o['paymentStatus'] ?? 'PAID').toString().toUpperCase(),
+            title: o['title'] ?? 'Barang Titipan Mahasiswa',
+            subtitle: o['subtitle'] ?? 'Hub Hotel Ibis Padang',
+            schedule: o['schedule'] ?? '1 Bulan',
+            price: o['price'] ?? 'Rp 199.000',
+            imageUrl: _defaultItemImage,
+          );
+        }).toList();
+        if (mounted) {
+          setState(() {
+            _orders = combined;
+          });
+        }
+      }
       final res = await ApiService.getBookings(userId: ApiService.currentUser?.id);
       if (mounted) {
         if (res['success'] == true && res['bookings'] is List) {
@@ -136,12 +165,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 subtitle: 'Kategori ${b['kategori'] ?? 'A'} • ${b['lokasiPickup'] ?? 'Kota Padang'}',
                 schedule: '${b['durasiBulan'] ?? 1} Bulan',
                 price: priceFmt,
-                imageUrl: _defaultOrders.first.imageUrl,
+                imageUrl: _defaultItemImage,
               );
             }).toList();
 
             setState(() {
-              _orders = mapped;
+              final localCodes = combined.map((c) => c.orderCode).toSet();
+              final serverOnly = mapped.where((m) => !localCodes.contains(m.orderCode)).toList();
+              _orders = [...combined, ...serverOnly];
             });
           }
         }
@@ -776,14 +807,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => OrderDetailScreen(
+                                              builder: (_) => TrackingScreen(
                                                 orderCode: order.orderCode,
-                                                currentStatus: order.statusType == 'active' ? 'IN_STORAGE' : 'COMPLETED',
-                                                rawData: {
-                                                  'title': order.title,
-                                                  'subtitle': order.subtitle,
-                                                  'schedule': order.schedule,
-                                                },
+//
+//
+//
+//
+//
+//
                                               ),
                                             ),
                                           );

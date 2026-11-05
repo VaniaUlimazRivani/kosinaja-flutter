@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../auth/login_screen.dart';
+import '../home/home_screen.dart';
+import '../../core/services/api_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -70,7 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
       }
     });
 
-    // 4. Berpindah mulus ke halaman Login setelah 4.6 detik
+    // 4. Berpindah mulus setelah 4.6 detik
     _navTimer = Timer(const Duration(milliseconds: 4600), () {
       if (mounted) {
         _goToLogin();
@@ -91,10 +93,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     _transitionTimer?.cancel();
     _navTimer?.cancel();
     if (!mounted) return;
+
+    // Jika user sudah login sebelumnya, langsung teruskan ke Beranda
+    // Jika belum login, tampilkan LoginScreen
+    final Widget targetScreen = ApiService.isLoggedIn ? const HomeScreen() : const LoginScreen();
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, anim, secAnim) => const LoginScreen(),
+        pageBuilder: (context, anim, secAnim) => targetScreen,
         transitionsBuilder: (context, anim, secAnim, child) {
           return FadeTransition(opacity: anim, child: child);
         },

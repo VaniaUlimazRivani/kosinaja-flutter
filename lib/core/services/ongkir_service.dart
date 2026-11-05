@@ -277,42 +277,41 @@ double hitungJarakKm(double lat1, double lng1, double lat2, double lng2) {
   return (roadKm * 10).round() / 10.0;
 }
 
-/// Menghitung ongkir dasar berdasarkan jarak (sesuai tabel resmi SafeTitip Padang):
-/// - <= 1.0 km -> Gratis (Rp 0)
-/// - 1.1 - 2.2 km -> Rp 5.000
-/// - 2.3 - 3.0 km -> Rp 7.000
-/// - 3.1 - 4.0 km -> Rp 8.000
-/// - 4.1 - 4.5 km -> Rp 9.000
-/// - 4.6 - 5.0 km -> Rp 10.000
-/// - 5.1 - 5.5 km -> Rp 11.000
-/// - 5.6 - 6.0 km -> Rp 12.000
-/// - 6.1 - 6.5 km -> Rp 13.000
-/// - 6.6 - 7.0 km -> Rp 14.000
-/// - 7.1 - 7.5 km -> Rp 15.000
-/// - 7.6 - 8.0 km -> Rp 16.000
-/// - 8.1 - 8.5 km -> Rp 17.000
-/// - 8.6 - 9.0 km -> Rp 18.000
-/// - 9.1 - 9.5 km -> Rp 19.000
-/// - 9.6 - 10.0 km -> Rp 20.000
-/// - 10.1 - 11.0 km -> Rp 24.000
-/// - 11.1 - 12.0 km -> Rp 26.000
-/// - 12.1 - 13.0 km -> Rp 28.000
-/// - 13.1 - 14.0 km -> Rp 30.000
-/// - 14.1 - 15.0 km -> Rp 32.000
-/// - 15.1 - 16.0 km -> Rp 34.000
-/// - 16.1 - 17.0 km -> Rp 36.000
-/// - 17.1 - 18.0 km -> Rp 38.000
-/// - 18.1 - 19.0 km -> Rp 40.000
-/// - 19.1 - 20.0 km -> Rp 43.000
-/// - 20.1 - 21.0 km -> Rp 45.000
-/// - 21.1 - 22.0 km -> Rp 47.000
-/// - 22.1 - 23.0 km -> Rp 49.000
-/// - 23.1 - 24.0 km -> Rp 51.000
-/// - 24.1 - 25.0 km -> Rp 55.000
-/// - > 25.0 km -> Rp 55.000 + Rp 2.500 / km
+/// Menghitung ongkir dasar berdasarkan jarak sesuai:
+/// 💰 Daftar Harga Bike & Delivery Komah
+/// - 100 m – 2,2 km ➜ 6k
+/// - 2,3 – 3,0 km ➜ 7k
+/// - 3,1 – 4,0 km ➜ 8k
+/// - 4,1 – 4,5 km ➜ 9k
+/// - 4,6 – 5,0 km ➜ 10k
+/// - 5,1 – 5,5 km ➜ 11k
+/// - 5,6 – 6,0 km ➜ 12k
+/// - 6,1 – 6,5 km ➜ 13k
+/// - 6,6 – 7,0 km ➜ 14k
+/// - 7,1 – 7,5 km ➜ 15k
+/// - 7,6 – 8,0 km ➜ 16k
+/// - 8,1 – 8,5 km ➜ 17k
+/// - 8,6 – 9,0 km ➜ 18k
+/// - 9,1 – 9,5 km ➜ 19k
+/// - 9,6 – 10 km ➜ 20k
+/// - 11 km (10.1 - 11.0 km) ➜ 24k
+/// - 12 km (11.1 - 12.0 km) ➜ 26k
+/// - 13 km (12.1 - 13.0 km) ➜ 28k
+/// - 14 km (13.1 - 14.0 km) ➜ 30k
+/// - 15 km (14.1 - 15.0 km) ➜ 32k
+/// - 16 km (15.1 - 16.0 km) ➜ 34k
+/// - 17 km (16.1 - 17.0 km) ➜ 36k
+/// - 18 km (17.1 - 18.0 km) ➜ 38k
+/// - 19 km (18.1 - 19.0 km) ➜ 40k
+/// - 20 km (19.1 - 20.0 km) ➜ 43k
+/// - 21 km (20.1 - 21.0 km) ➜ 45k
+/// - 22 km (21.1 - 22.0 km) ➜ 47k
+/// - 23 km (22.1 - 23.0 km) ➜ 49k
+/// - 24 km (23.1 - 24.0 km) ➜ 51k
+/// - 25 km (24.1 - 25.0 km) ➜ 55k
+/// - > 25 km ➜ 55k + 3k/km
 int hitungTarifDasarOngkir(double jarakKm) {
-  if (jarakKm <= 1.0) return 0;
-  if (jarakKm <= 2.2) return 5000;
+  if (jarakKm <= 2.2) return 6000;
   if (jarakKm <= 3.0) return 7000;
   if (jarakKm <= 4.0) return 8000;
   if (jarakKm <= 4.5) return 9000;
@@ -344,7 +343,7 @@ int hitungTarifDasarOngkir(double jarakKm) {
   if (jarakKm <= 25.0) return 55000;
 
   final double sisaKm = jarakKm - 25.0;
-  return 55000 + (sisaKm.ceil() * 2500);
+  return 55000 + (sisaKm.ceil() * 3000);
 }
 
 class KalkulasiOngkirResult {
@@ -393,7 +392,7 @@ KalkulasiOngkirResult kalkulasiOngkirLengkap({
 
   final int durasi = customDurationMin ?? max(5, (jarak * 2.5).round());
 
-  // Biaya dasar per perjalanan berdasarkan jarak
+  // Biaya dasar per perjalanan berdasarkan jarak (Daftar Harga Bike & Delivery Komah)
   final int tarifDasar = hitungTarifDasarOngkir(jarak);
 
   // Surcharge kategori per leg (Kategori B: 5k, Kategori C: 10k, Custom/D: 15k)
@@ -420,9 +419,7 @@ KalkulasiOngkirResult kalkulasiOngkirLengkap({
 
   final int totalOngkir = ongkirPickup + ongkirDelivery;
 
-  final String deskripsiJarak = jarak <= 1.0
-      ? 'Radius Hub (<= 1.0 km • Gratis Ongkir)'
-      : '$jarak km dari Hub Hotel Ibis (~$durasi Menit)';
+  final String deskripsiJarak = '$jarak km dari Hub (~$durasi Menit)';
 
   return KalkulasiOngkirResult(
     jarakKm: jarak,

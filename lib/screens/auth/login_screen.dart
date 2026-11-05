@@ -101,14 +101,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final User? firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        // Simpan sesi user ke ApiService
-        ApiService.currentUser = ApiUser(
+        // Simpan sesi user ke ApiService & SharedPreferences
+        final loggedUser = ApiUser(
           id: firebaseUser.uid,
           nama: firebaseUser.displayName ?? 'Mahasiswa KosinAja',
           email: firebaseUser.email ?? googleUser.email,
           noWa: firebaseUser.phoneNumber ?? '081234567890',
           alamat: 'Kota Padang, Sumatera Barat',
         );
+        await ApiService.saveSession(loggedUser);
 
         if (!mounted) return;
 

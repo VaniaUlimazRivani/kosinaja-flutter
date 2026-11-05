@@ -45,24 +45,11 @@ class KosinAjaApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       initialRoute: '/',
       routes: {
-        '/': (context) {
-          // 1. Jika sudah ada sesi aktif -> langsung masuk Dashboard Home
-          if (ApiService.isLoggedIn) {
-            return const HomeScreen();
-          }
-          // 2. Jika belum login tapi sudah pernah lewati onboarding -> langsung Login
-          if (ApiService.hasSeenOnboarding) {
-            return const LoginScreen();
-          }
-          // 3. User baru pertama kali buka app -> Tampilkan Onboarding
-          return const OnboardingScreen();
-        },
+        '/': (context) => const OnboardingScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
-        '/booking-step1': (context) => const BookingStep1Screen(),
-        '/tracking': (context) => const TrackingScreen(),
         '/orders': (context) => const OrdersScreen(),
         '/help': (context) => const HelpScreen(),
         '/profile': (context) => const ProfileScreen(),
@@ -70,7 +57,12 @@ class KosinAjaApp extends StatelessWidget {
         '/location-shipping': (context) => const LocationShippingScreen(),
       },
       onGenerateRoute: (settings) {
-        if (settings.name == '/booking-step2') {
+        if (settings.name == '/booking-step1') {
+          final data = settings.arguments as BookingData?;
+          return MaterialPageRoute(
+            builder: (context) => BookingStep1Screen(initialBooking: data),
+          );
+        } else if (settings.name == '/booking-step2') {
           final data = settings.arguments as BookingData?;
           return MaterialPageRoute(
             builder: (context) => BookingStep2Screen(bookingData: data),
@@ -79,6 +71,27 @@ class KosinAjaApp extends StatelessWidget {
           final data = settings.arguments as BookingData?;
           return MaterialPageRoute(
             builder: (context) => BookingStep3Screen(bookingData: data),
+          );
+        } else if (settings.name == '/tracking') {
+          final args = settings.arguments;
+          if (args is Map<String, dynamic>) {
+            return MaterialPageRoute(
+              builder: (context) => TrackingScreen(
+                orderCode: args['orderCode'] as String?,
+                bookingData: args['booking'] as BookingData?,
+              ),
+            );
+          } else if (args is BookingData) {
+            return MaterialPageRoute(
+              builder: (context) => TrackingScreen(bookingData: args),
+            );
+          } else if (args is String) {
+            return MaterialPageRoute(
+              builder: (context) => TrackingScreen(orderCode: args),
+            );
+          }
+          return MaterialPageRoute(
+            builder: (context) => const TrackingScreen(),
           );
         }
         return null;

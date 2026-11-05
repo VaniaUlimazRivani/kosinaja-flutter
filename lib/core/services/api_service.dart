@@ -345,6 +345,16 @@ class ApiService {
     String? currentPassword,
     String? newPassword,
   }) async {
+    // 1. Simpan pembaruan ke session lokal SharedPreferences secara instan & persisten
+    if (currentUser != null) {
+      final updatedLocally = currentUser!.copyWith(
+        nama: (nama != null && nama.trim().isNotEmpty) ? nama.trim() : null,
+        noWa: (noWa != null && noWa.trim().isNotEmpty) ? noWa.trim() : null,
+        alamat: (alamat != null && alamat.trim().isNotEmpty) ? alamat.trim() : null,
+      );
+      await saveSession(updatedLocally);
+    }
+
     final url = Uri.parse('$baseUrl/user/profile');
 
     final Map<String, dynamic> payload = {
