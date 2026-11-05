@@ -315,7 +315,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -511,7 +511,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
             border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: Colors.black.withOpacity(0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -679,7 +679,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: Colors.white.withOpacity(0.95),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                     boxShadow: const [
@@ -1013,7 +1013,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primarySoft.withValues(alpha: 0.35)
+              ? AppColors.primarySoft.withOpacity(0.35)
               : AppColors.cardSurface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(

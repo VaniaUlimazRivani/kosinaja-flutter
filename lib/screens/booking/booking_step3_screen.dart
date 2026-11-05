@@ -188,12 +188,12 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
       if (user != null && user.id.isNotEmpty) 'userId': user.id,
       'nama': user?.nama ?? 'Pelanggan KosinAja',
       'noWa': (user != null && user.noWa.isNotEmpty) ? user.noWa : '081234567890',
-      'alamat': _booking.kosAddress,
+      'alamat': fullAddress,
       'lokasiPickup': _booking.lokasiNama.isNotEmpty
-          ? '\ - '
-          : _booking.kosAddress,
+          ? '${_booking.lokasiNama} - $fullAddress'
+          : fullAddress,
       'catatan': _booking.kosNote,
-      'tanggalPickup': _booking.pickupDate.toIso8601String(),
+      'tanggalPickup': scheduleDate.toIso8601String(),
       'items': activeItems.isNotEmpty
           ? activeItems
           : [
@@ -215,7 +215,6 @@ class _BookingStep3ScreenState extends State<BookingStep3Screen> {
       'metodePembayaran': _selectedPayment,
       'latitude': _booking.latitude,
       'longitude': _booking.longitude,
-      'jarakKm': _booking.jarakKm,
       'ongkirPickup': _booking.ongkirPickup,
       'ongkirDelivery': _booking.ongkirDelivery,
       'totalOngkir': _booking.deliveryFee,
